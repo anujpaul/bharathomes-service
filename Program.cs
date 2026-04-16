@@ -1,8 +1,11 @@
+using Azure.Identity;
+using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 
+string account = "https://cosmosaccountap.documents.azure.com:443/";
+string key = "";
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
-
 
 builder.Services.AddCors(options =>
 {
@@ -26,6 +29,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         sqlOptions.EnableRetryOnFailure();
     });
 });
+
+builder.Services.AddSingleton<CosmosClient>(
+    sp =>
+    {
+        return new CosmosClient(account, new DefaultAzureCredential());
+    }
+);
+
+builder.Services.AddSingleton<CosmosDbService>();
 
 builder.Services.AddScoped<ImageService>();
 

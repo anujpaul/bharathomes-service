@@ -6,15 +6,18 @@ using Microsoft.EntityFrameworkCore;
 [Route("api")] // Changes route to api/listing
 public class ListingController : ControllerBase
 {
+    private readonly ILogger<ListingController> _logger;
     private readonly AppDbContext _context;
     private readonly ImageService _imageService;
-
-    public ListingController(ImageService imageService, AppDbContext context)
+    private readonly CosmosDbService _cosmosService;
+    public ListingController(ImageService imageService, AppDbContext context, CosmosDbService cosmosService, ILogger<ListingController> logger)
     {
         _imageService = imageService;
         _context = context;
+        _cosmosService = cosmosService;
+        _logger = logger;
     }
-    
+
     [HttpGet("test")]
     public IActionResult Test()
     {
@@ -94,15 +97,15 @@ public class ListingController : ControllerBase
     public async Task<IActionResult> AgentsAsync()
     {
         System.Console.WriteLine("Agent called");
-        var agents = await _context.Agents.ToListAsync();
+        //  var agents = await _context.Agents.ToListAsync();
 
-        foreach (var agent in agents)
-        {
-            if (agent.Id == "a1")
-            {
-                agent.Image = _imageService.GetImage("Agents", agent.Image);
-            }
-        }
+        // foreach (var agent in agents)
+        // {
+        //     if (agent.Id == "a1")
+        //     {
+        //         agent.Image = _imageService.GetImage("Agents", agent.Image);
+        //     }
+        // }
 
         // {
         //     new() {
@@ -133,6 +136,31 @@ public class ListingController : ControllerBase
         //         Specialization = "Greater Noida Express Highway"
         //     }
         // };
+
+        var agents = await _cosmosService.ReadItemAsync<Agent>("bharathomes", "Agents", "Agent");
+
+        foreach (var agent in agents)
+        {
+            if (agent.Id == "a1")
+            {
+                agent.Image = _imageService.GetImage("Agents", agent.Image);
+            }
+        }
         return Ok(agents);
     }
+
+    [HttpPost("createagent")]
+    public async Task<IActionResult> createAgentAsync([FromBody] Agent agent)
+    {
+        _logger.LogInformation($"Agent body : {System.Text.Json.JsonSerializer.Serialize(agent)}");
+        return Ok(await _cosmosService.CreateItemAsyc<Agent>("bharathomes", "Agents", agent));
+    }
+
+    [HttpPost("createProperty")]
+    public async Task<IActionResult> createPlantAsync([FromBody] Property property)
+    {
+        _logger.LogInformation($"Property called : {System.Text.Json.JsonSerializer.Serialize(property)}");
+        return Ok(await _cosmosService.CreateItemAsyc<Property>("bharathomes", "Agents", property));
+    }
+    
 }
