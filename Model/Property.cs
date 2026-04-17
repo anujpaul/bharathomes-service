@@ -24,6 +24,6 @@ public class Property
     public string Image { get; set; } = string.Empty;
     public bool IsFeatured { get; set; }
     public bool ExpresswayProximity { get; set; }
-    // [JsonProperty("modeltype")]
-    // public string ModelType { get; set; } = "Property";
+    [JsonProperty("modeltype")]
+    public string ModelType { get; set; } = "Property";
 }

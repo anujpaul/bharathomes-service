@@ -2,38 +2,35 @@ using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 
-string account = "https://cosmosaccountap.documents.azure.com:443/";
-string key = "";
+
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("AzureSqlDb");
+string cosmosAccount = builder.Configuration["CosmosAccount"]!;
+string cosmosDbName = builder.Configuration["CosmosDbName"]!;
+string cosmosContainerName = builder.Configuration["CosmosContainerName"]!;
+
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+                     ?? Array.Empty<string>();
+
+
 builder.Services.AddControllers();
 
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3000",
-                            "https://bharathomes.azurewebsites.net") // Your Angular port
+        policy.WithOrigins(allowedOrigins) // Your Angular port
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
 
-var connectionString = builder.Configuration.GetConnectionString("AzureSqlDb");
 
-// 2. Register DbContext with Azure Managed Identity
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseSqlServer(connectionString, sqlOptions => 
-    {
-        // Recommended for cloud-native apps: automatically retries on transient failures
-        sqlOptions.EnableRetryOnFailure();
-    });
-});
-
-builder.Services.AddSingleton<CosmosClient>(
+builder.Services.AddSingleton<Container>(
     sp =>
     {
-        return new CosmosClient(account, new DefaultAzureCredential());
+        return new CosmosClient(cosmosAccount, new DefaultAzureCredential()).GetContainer(cosmosDbName, cosmosContainerName);
     }
 );
 
@@ -43,9 +40,7 @@ builder.Services.AddScoped<ImageService>();
 
 var app = builder.Build();
 
-
 app.UseCors();
 app.MapControllers();
-// app.MapGet("/", () => "Hello World!");
 
 app.Run();
