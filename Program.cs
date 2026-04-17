@@ -9,6 +9,7 @@ var connectionString = builder.Configuration.GetConnectionString("AzureSqlDb");
 string cosmosAccount = builder.Configuration["CosmosAccount"]!;
 string cosmosDbName = builder.Configuration["CosmosDbName"]!;
 string cosmosContainerName = builder.Configuration["CosmosContainerName"]!;
+string cosmosKey = builder.Configuration["CosmosKey"]!;
 
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
                      ?? Array.Empty<string>();
@@ -30,7 +31,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<Container>(
     sp =>
     {
-        return new CosmosClient(cosmosAccount, new DefaultAzureCredential()).GetContainer(cosmosDbName, cosmosContainerName);
+        return new CosmosClient(cosmosAccount, cosmosKey).GetContainer(cosmosDbName, cosmosContainerName);
     }
 );
 
