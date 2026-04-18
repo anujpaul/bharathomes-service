@@ -21,9 +21,10 @@ public class Property
     // Matches your TS 'Apartment' | 'Villa' | 'Plot' | 'Commercial'
     public string Type { get; set; } = string.Empty;
 
-    public string Image { get; set; } = string.Empty;
+    public List<string> Image { get; set; } = new List<string>();
     public bool IsFeatured { get; set; }
     public bool ExpresswayProximity { get; set; }
+
     [JsonProperty("modeltype")]
     public string ModelType { get; set; } = "Property";
 }
