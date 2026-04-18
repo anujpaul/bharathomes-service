@@ -14,6 +14,7 @@ public class Agent
     public double Rating { get; set; }
     public int ListingsCount { get; set; }
     public string Specialization { get; set; } = string.Empty;
+    
     [JsonProperty("modeltype")]
-    public string ModelType { get; set; } = "Agent";
+    public static string ModelType => "Agent";
 }

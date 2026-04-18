@@ -26,5 +26,5 @@ public class Property
     public bool ExpresswayProximity { get; set; }
 
     [JsonProperty("modeltype")]
-    public string ModelType { get; set; } = "Property";
+    public static string ModelType => "Property";
 }

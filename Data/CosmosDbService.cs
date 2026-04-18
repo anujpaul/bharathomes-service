@@ -14,8 +14,11 @@ public class CosmosDbService
 
     }
 
-    public async Task<List<T>> ReadItemsAsync<T>(string modelType)
+    public async Task<List<T>> ReadItemsAsync<T>()
     {        
+        
+        string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
+
         var queryDefinition = new QueryDefinition("SELECT * FROM c WHERE c.modeltype = @type")
         .WithParameter("@type", modelType);
 
@@ -31,13 +34,14 @@ public class CosmosDbService
         return results;
     }
 
-    public async Task<T> ReadItemAsync<T>(string modelType, string id)
+    public async Task<T> ReadItemAsync<T>(string id)
     {
         
         // var queryDefinition = new QueryDefinition("SELECT * FROM c WHERE c.modeltype = @type")
         // .WithParameter("@type", modelType);
 
         // var feedIterator = _container.GetItemQueryIterator<T>(queryDefinition);
+        string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
 
         var result = await _container.ReadItemAsync<T>(id, new PartitionKey(id));
 
@@ -64,8 +68,10 @@ public class CosmosDbService
         return $"Response Status : {response.StatusCode}";
     }
 
-    public async Task<string> DeleteItemAsync<T>(string modelType, string id)
+    public async Task<string> DeleteItemAsync<T>(string id)
     {
+         string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
+
         var response = await _container.DeleteItemAsync<T>(id, new PartitionKey(id));
 
         return $"{modelType} with {id} Deleted status : {response.StatusCode}";

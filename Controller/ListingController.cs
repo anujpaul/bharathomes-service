@@ -25,19 +25,19 @@ public class ListingController : ControllerBase
     [HttpGet("properties")]
     public async Task<IActionResult> Properties()
     {
-        System.Console.WriteLine("Properties called");
+        _logger.LogInformation("Properties called");
         
 
-        var properties = await _cosmosService.ReadItemsAsync<Property>("Property");
+        var properties = await _cosmosService.ReadItemsAsync<Property>();
         return Ok(properties);
     }
 
     [HttpGet("agents")]
     public async Task<IActionResult> GetAgentsAsync()
     {
-        System.Console.WriteLine("Agents called");
+        _logger.LogInformation("Agents called");
 
-        var agents = await _cosmosService.ReadItemsAsync<Agent>("Agent");
+        var agents = await _cosmosService.ReadItemsAsync<Agent>();
 
         foreach (var agent in agents)
         {
@@ -52,25 +52,22 @@ public class ListingController : ControllerBase
     [HttpGet("agent/{id}")] // Use HttpGet for retrieving data
     public async Task<IActionResult> GetAgentAsync(string id)
     {
-        System.Console.WriteLine("Agent called");
-
-        var agents = await _cosmosService.ReadItemAsync<Agent>("Agent", id);
-
+        _logger.LogInformation("Agent called");
+        var agents = await _cosmosService.ReadItemAsync<Agent>(id);
         return Ok(agents);
     }
 
     [HttpDelete("agent/{id}")]
     public async Task<string> DeleteAgentAsync(string id)
     {
-        return await _cosmosService.DeleteItemAsync<Agent>("Agent", id);
+        return await _cosmosService.DeleteItemAsync<Agent>(id);
     }
     
     [HttpDelete("property/{id}")]
     public async Task<string> DeletePropertyAsync(string id)
     {
-        return await _cosmosService.DeleteItemAsync<Agent>("Property", id);
+        return await _cosmosService.DeleteItemAsync<Agent>(id);
     }
-
 
     [HttpPost("createagent")]
     public async Task<IActionResult> createAgentAsync([FromBody] Agent agent)
