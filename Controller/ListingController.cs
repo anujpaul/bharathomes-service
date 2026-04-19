@@ -57,11 +57,19 @@ public class ListingController : ControllerBase
         return Ok(agents);
     }
 
+    [HttpGet("property/{id}")]
+    public async Task<IActionResult> GetPropertyById(string id)
+    {
+        return Ok(await _cosmosService.ReadItemAsync<Property>(id));
+    }
+
     [HttpDelete("agent/{id}")]
     public async Task<string> DeleteAgentAsync(string id)
     {
         return await _cosmosService.DeleteItemAsync<Agent>(id);
     }
+
+    
     
     [HttpDelete("property/{id}")]
     public async Task<string> DeletePropertyAsync(string id)
