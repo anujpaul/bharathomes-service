@@ -23,7 +23,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(allowedOrigins) // Your Angular port
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
