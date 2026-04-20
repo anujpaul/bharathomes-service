@@ -44,6 +44,11 @@ public class ListingController : ControllerBase
         _logger.LogInformation($"User Id : {userId}");
         _logger.LogInformation($"User Name : {userName}");
 
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation($"{header.Key}: {header.Value}");
+        }
+
         var agents = await _cosmosService.ReadItemsAsync<Agent>();
 
         foreach (var agent in agents)
