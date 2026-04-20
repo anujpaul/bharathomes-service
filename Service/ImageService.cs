@@ -1,10 +1,11 @@
 public class ImageService
 {
-    private IConfiguration _config;
-
-    public ImageService(IConfiguration config)
+    private readonly IConfiguration _config;
+    private readonly ILogger<ImageService> _logger;  
+    public ImageService(IConfiguration config, ILogger<ImageService> logger)
     {
         _config = config;
+        _logger = logger;
     }
     public string GetImage(string folderName, string blobName)
     {   
@@ -12,7 +13,7 @@ public class ImageService
         string? sasToken = _config["SasToken"];
         // https://bharathomes.blob.core.windows.net/production/images/Agents/sunny_paul.jpg
         string returnUrl = $"{storageAccountUrl}/images/{folderName}/{blobName}{sasToken}";
-        System.Console.WriteLine($"Return URL : {returnUrl}");
+        _logger.LogInformation($"Return URL : {returnUrl}");
         return returnUrl;
     }
 }

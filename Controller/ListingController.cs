@@ -41,7 +41,7 @@ public class ListingController : ControllerBase
         var userId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
         var userName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
 
-        _logger.LogInformation($"User Id : {userId}");
+        System.Console.WriteLine($"User Id : {userId}");
         _logger.LogInformation($"User Name : {userName}");
 
         foreach (var header in Request.Headers)

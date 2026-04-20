@@ -24,7 +24,9 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins) // Your Angular port
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowCredentials()
+            //   .WithHeaders("Content-Type", "Authorization", "X-User-Id")
+              ;
     });
 });
 
