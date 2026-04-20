@@ -1,3 +1,4 @@
+using System.Net.Cache;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,12 @@ public class ListingController : ControllerBase
     public async Task<IActionResult> GetAgentsAsync()
     {
         _logger.LogInformation("Agents called");
+
+        var userId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
+        var userName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
+
+        _logger.LogInformation($"User Id : {userId}");
+        _logger.LogInformation($"User Name : {userName}");
 
         var agents = await _cosmosService.ReadItemsAsync<Agent>();
 
