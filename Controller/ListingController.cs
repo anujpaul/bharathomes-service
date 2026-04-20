@@ -41,7 +41,10 @@ public class ListingController : ControllerBase
         var userId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
         var userName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
 
-        System.Console.WriteLine($"User Id : {userId}");
+        var ngUserId = Request.Headers["X-User-Id"].FirstOrDefault();
+        // var ngUserName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
+
+        System.Console.WriteLine($"User Id : {nguserId}");
         _logger.LogInformation($"User Name : {userName}");
 
         foreach (var header in Request.Headers)
