@@ -39,36 +39,6 @@ public class ListingController : ControllerBase
     {
         _logger.LogInformation("Agents called");
 
-
-        
-        var MicrodoftId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
-        var userId = Request.Headers["X-User-Id"].FirstOrDefault();
-        var userName = Request.Headers["X-User-Name"].FirstOrDefault();
-        var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
-
-        _logger.LogInformation($"MicrodoftId Id : {userId}");
-
-        if (!string.IsNullOrEmpty(userId))
-        {
-            UserProfile user = new UserProfile
-                                        {
-                                            Id = userId,
-                                            Name = userName,
-                                            Email = userEmail
-                                        };
-            await _cosmosService.CreateItemAsyc<UserProfile>(user);
-        }
-        
-        
-
-
-        _logger.LogInformation($"User Id : {userName}");
-
-        foreach (var header in Request.Headers)
-        {
-            _logger.LogInformation($"{header.Key}: {header.Value}");
-        }
-
         var agents = await _cosmosService.ReadItemsAsync<Agent>();
 
         foreach (var agent in agents)
@@ -130,5 +100,46 @@ public class ListingController : ControllerBase
         return Ok(await _cosmosService.CreateItemAsyc<UserProfile>(user));
     }
 
+    [HttpGet("userProfile")]
+    public async Task<IActionResult> UserProfile()
+    {
+        var MicrosoftId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
+        var userId = Request.Headers["X-User-Id"].FirstOrDefault();
+        var userName = Request.Headers["X-User-Name"].FirstOrDefault();
+        var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
+
+        _logger.LogInformation($"MicrosoftId Id : {userId}");
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            UserProfile user = new UserProfile
+                                        {
+                                            Id = userId,
+                                            Name = userName,
+                                            Email = userEmail
+                                        };
+            var userExist = await _cosmosService.ReadItemAsync<UserProfile>(userId);
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                await _cosmosService.CreateItemAsyc<UserProfile>(user);
+                _logger.LogInformation("User Created");
+                return Created("", new { message = "User created" });
+            }
+        }
+        
+        
+
+
+        _logger.LogInformation($"User Id : {userName}");
+
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation($"{header.Key}: {header.Value}");
+        }
+
+        return Ok(new { message = "User exists" });
+        
+    }
 
 }
