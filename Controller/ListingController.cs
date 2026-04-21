@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Net.Cache;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -38,14 +39,30 @@ public class ListingController : ControllerBase
     {
         _logger.LogInformation("Agents called");
 
-        var userId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
-        var userName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
 
-        var ngUserId = Request.Headers["X-User-Id"].FirstOrDefault();
-        // var ngUserName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
+        
+        var MicrodoftId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
+        var userId = Request.Headers["X-User-Id"].FirstOrDefault();
+        var userName = Request.Headers["X-User-Name"].FirstOrDefault();
+        var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
 
-        System.Console.WriteLine($"User Id : {ngUserId}");
-        _logger.LogInformation($"User Name : {userName}");
+        _logger.LogInformation($"MicrodoftId Id : {userId}");
+
+        if (!string.IsNullOrEmpty(userId))
+        {
+            UserProfile user = new UserProfile
+                                        {
+                                            Id = userId,
+                                            Name = userName,
+                                            Email = userEmail
+                                        };
+            await _cosmosService.CreateItemAsyc<UserProfile>(user);
+        }
+        
+        
+
+
+        _logger.LogInformation($"User Id : {userName}");
 
         foreach (var header in Request.Headers)
         {
@@ -89,7 +106,7 @@ public class ListingController : ControllerBase
     [HttpDelete("property/{id}")]
     public async Task<string> DeletePropertyAsync(string id)
     {
-        return await _cosmosService.DeleteItemAsync<Agent>(id);
+        return await _cosmosService.DeleteItemAsync<Property>(id);
     }
 
     [HttpPost("createagent")]
@@ -106,4 +123,12 @@ public class ListingController : ControllerBase
         return Ok(await _cosmosService.CreateItemAsyc<Property>(property));
     }
     
+    [HttpPost("createUser")]
+    public async Task<IActionResult> createUserAsync([FromBody] UserProfile user)
+    {
+        _logger.LogInformation($"User called : {System.Text.Json.JsonSerializer.Serialize(user)}");
+        return Ok(await _cosmosService.CreateItemAsyc<UserProfile>(user));
+    }
+
+
 }
