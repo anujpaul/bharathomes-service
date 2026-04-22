@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.Net.Cache;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -101,13 +102,13 @@ public class ListingController : ControllerBase
     }
 
     [HttpPost("userProfile")]
-    public async Task<IActionResult> UserProfile([FromBody] string userClaim)
+    public async Task<IActionResult> UserProfile([FromBody] JsonElement  userClaim)
     {
         foreach (var header in Request.Headers)
         {
             _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
         }
-        Console.WriteLine($"User Claim === {userClaim}");
+        Console.WriteLine($"User Claim === {userClaim.ToString()}");
 
         var MicrosoftId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
         var userId = Request.Headers["X-User-Id"].FirstOrDefault();
