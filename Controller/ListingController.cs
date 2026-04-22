@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.Net.Cache;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -102,22 +103,23 @@ public class ListingController : ControllerBase
     }
 
     [HttpPost("userProfile")]
-    public async Task<IActionResult> UserProfile([FromBody] JsonElement  userClaim)
+    public async Task<IActionResult> UserProfile()
     {
         foreach (var header in Request.Headers)
         {
             _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
         }
-        Console.WriteLine($"User Claim === {userClaim.ToString()}");
 
-        var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
-        var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
-        var userId = Request.Headers["X-User-Id"].FirstOrDefault();
-        var userName = Request.Headers["X-User-Name"].FirstOrDefault();
-        var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
+        var (userId, userName, userEmail) = GetUserFromHeader();
 
-        _logger.LogInformation($"MicrosoftPrincipalId  : {MicrosoftPrincipalId}");
-        _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
+        // var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
+        // var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
+        // var userId = Request.Headers["X-User-Id"].FirstOrDefault();
+        // var userName = Request.Headers["X-User-Name"].FirstOrDefault();
+        // var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
+
+        
+        // _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
 
         if (!string.IsNullOrEmpty(userId))
         {
@@ -146,6 +148,36 @@ public class ListingController : ControllerBase
 
         return Ok(new { message = "User exists" });
         
+    }
+
+
+    private (string? id, string? name, string? email) GetUserFromHeader()
+    {
+        var principalHeader = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
+
+        _logger.LogInformation($"MicrosoftPrincipal Header  : {principalHeader}");
+
+        if (string.IsNullOrEmpty(principalHeader))
+            return (null, null, null);
+
+        var json = Encoding.UTF8.GetString(Convert.FromBase64String(principalHeader));
+        var doc = JsonDocument.Parse(json);
+
+        string? id = null;
+        string? name = null;
+        string? email = null;
+
+        foreach (var claim in doc.RootElement.GetProperty("claims").EnumerateArray())
+        {
+            var type = claim.GetProperty("typ").GetString();
+            var value = claim.GetProperty("val").GetString();
+
+            if (type == "nameidentifier") id = value;
+            if (type == "name") name = value;
+            if (type == "emailaddress") email = value;
+        }
+
+        return (id, name, email);
     }
 
 }
