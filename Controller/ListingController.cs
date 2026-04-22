@@ -1,8 +1,10 @@
 using System.Data.Common;
 using System.Net.Cache;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -103,44 +105,53 @@ public class ListingController : ControllerBase
     }
 
     [HttpPost("userProfile")]
+    [Authorize]
     public async Task<IActionResult> UserProfile()
     {
         foreach (var header in Request.Headers)
         {
             _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
         }
+        var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                    ?? User.FindFirst("sub")?.Value;
+    var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
+                    ?? User.FindFirst("given_name")?.Value;
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
+                    ?? User.FindFirst("email")?.Value;
 
-        var (userId, userName, userEmail) = GetUserFromHeader();
+    _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}", 
+        userId, userName, userEmail);
+        // var (userId, userName, userEmail) = GetUserFromHeader();
 
-        // var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
-        // var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
-        // var userId = Request.Headers["X-User-Id"].FirstOrDefault();
-        // var userName = Request.Headers["X-User-Name"].FirstOrDefault();
-        // var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
+        // // var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
+        // // var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
+        // // var userId = Request.Headers["X-User-Id"].FirstOrDefault();
+        // // var userName = Request.Headers["X-User-Name"].FirstOrDefault();
+        // // var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
 
         
-        // _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
+        // // _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
 
-        if (!string.IsNullOrEmpty(userId))
-        {
-            _logger.LogInformation($"MicrosoftId Id : {userId}");
-            UserProfile user = new UserProfile
-                                        {
-                                            Id = userId,
-                                            Name = userName ?? "",
-                                            Email = userEmail ?? ""
-                                        };
-            var userProfile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
+        // if (!string.IsNullOrEmpty(userId))
+        // {
+        //     _logger.LogInformation($"MicrosoftId Id : {userId}");
+        //     UserProfile user = new UserProfile
+        //                                 {
+        //                                     Id = userId,
+        //                                     Name = userName ?? "",
+        //                                     Email = userEmail ?? ""
+        //                                 };
+        //     var userProfile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
 
-            if (userProfile == null)
-            {
-                await _cosmosService.CreateItemAsyc<UserProfile>(user);
-                _logger.LogInformation("User Created");
-                return Created("", new { message = "User created" });
-            }
-        }
+        //     if (userProfile == null)
+        //     {
+        //         await _cosmosService.CreateItemAsyc<UserProfile>(user);
+        //         _logger.LogInformation("User Created");
+        //         return Created("", new { message = "User created" });
+        //     }
+        // }
 
-        _logger.LogInformation($"User Id : {userName}");
+        // _logger.LogInformation($"User Id : {userName}");
 
         
 

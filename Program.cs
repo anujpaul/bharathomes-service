@@ -1,6 +1,8 @@
 using Azure.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +32,24 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://accounts.google.com";
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://accounts.google.com",
+            ValidateAudience = true,
+            // Your Google Client ID
+            ValidAudience = "952596507071-nhso45200fv957edkhjalcn8ihh6ll32.apps.googleusercontent.com",
+            ValidateLifetime = true,
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+
 
 builder.Services.AddSingleton<Container>(
     sp =>
@@ -45,6 +65,10 @@ builder.Services.AddScoped<ImageService>();
 var app = builder.Build();
 
 app.UseCors("AllowAngular");
+
+// Make sure these are in the right order
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
