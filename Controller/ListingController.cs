@@ -110,12 +110,14 @@ public class ListingController : ControllerBase
         }
         Console.WriteLine($"User Claim === {userClaim.ToString()}");
 
-        var MicrosoftId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
+        var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
+        var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
         var userId = Request.Headers["X-User-Id"].FirstOrDefault();
         var userName = Request.Headers["X-User-Name"].FirstOrDefault();
         var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
 
-        _logger.LogInformation($"MicrosoftId Id : {MicrosoftId}");
+        _logger.LogInformation($"MicrosoftPrincipalId  : {MicrosoftPrincipalId}");
+        _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
 
         if (!string.IsNullOrEmpty(userId))
         {
