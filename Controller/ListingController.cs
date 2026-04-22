@@ -108,10 +108,10 @@ public class ListingController : ControllerBase
     [HttpPost("userProfile")]
     public async Task<IActionResult> UserProfile()
     {
-        foreach (var header in Request.Headers)
-        {
-            _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
-        }
+        // foreach (var header in Request.Headers)
+        // {
+        //     _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
+        // }
         var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? User.FindFirst("sub")?.Value;
         var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
