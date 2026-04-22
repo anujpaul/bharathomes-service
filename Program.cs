@@ -49,8 +49,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-
-
 builder.Services.AddSingleton<Container>(
     sp =>
     {

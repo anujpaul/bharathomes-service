@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api")] 
+[Authorize]
 public class ListingController : ControllerBase
 {
     private readonly ILogger<ListingController> _logger;
@@ -105,7 +106,6 @@ public class ListingController : ControllerBase
     }
 
     [HttpPost("userProfile")]
-    [Authorize]
     public async Task<IActionResult> UserProfile()
     {
         foreach (var header in Request.Headers)
