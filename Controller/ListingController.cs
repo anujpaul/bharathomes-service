@@ -100,43 +100,46 @@ public class ListingController : ControllerBase
         return Ok(await _cosmosService.CreateItemAsyc<UserProfile>(user));
     }
 
-    [HttpGet("userProfile")]
-    public async Task<IActionResult> UserProfile()
+    [HttpPost("userProfile")]
+    public async Task<IActionResult> UserProfile([FromBody] string userClaim)
     {
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
+        }
+        Console.WriteLine($"User Claim === {userClaim}");
+
         var MicrosoftId = Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"].FirstOrDefault();
         var userId = Request.Headers["X-User-Id"].FirstOrDefault();
         var userName = Request.Headers["X-User-Name"].FirstOrDefault();
         var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
 
-        _logger.LogInformation($"MicrosoftId Id : {userId}");
+        _logger.LogInformation($"MicrosoftId Id : {MicrosoftId}");
 
         if (!string.IsNullOrEmpty(userId))
         {
+            _logger.LogInformation($"MicrosoftId Id : {userId}");
             UserProfile user = new UserProfile
                                         {
                                             Id = userId,
-                                            Name = userName,
-                                            Email = userEmail
+                                            Name = userName ?? "",
+                                            Email = userEmail ?? ""
                                         };
-            var userExist = await _cosmosService.ReadItemAsync<UserProfile>(userId);
+            var userProfile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
 
-            if (string.IsNullOrEmpty(userId))
+            if (userProfile == null)
             {
                 await _cosmosService.CreateItemAsyc<UserProfile>(user);
                 _logger.LogInformation("User Created");
                 return Created("", new { message = "User created" });
             }
         }
-        
-        
-
 
         _logger.LogInformation($"User Id : {userName}");
 
-        foreach (var header in Request.Headers)
-        {
-            _logger.LogInformation($"{header.Key}: {header.Value}");
-        }
+        
+
+
 
         return Ok(new { message = "User exists" });
         

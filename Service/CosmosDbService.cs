@@ -1,3 +1,4 @@
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
@@ -37,24 +38,18 @@ public class CosmosDbService
     public async Task<T> ReadItemAsync<T>(string id)
     {
         
-        // var queryDefinition = new QueryDefinition("SELECT * FROM c WHERE c.modeltype = @type")
-        // .WithParameter("@type", modelType);
-
-        // var feedIterator = _container.GetItemQueryIterator<T>(queryDefinition);
-        string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
-
-        var result = await _container.ReadItemAsync<T>(id, new PartitionKey(id));
-
-
-        // var results = new List<T>();
-
-        // while (feedIterator.HasMoreResults)
-        // {
-        //     FeedResponse<T> response = await feedIterator.ReadNextAsync();
-        //     results.AddRange(response.ToList());
-        // }
-        return result;
+        try
+        {
+            string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
+            var result = await _container.ReadItemAsync<T>(id, new PartitionKey(id));
+            return result;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return default! ;
+        }
     }
+    
 
     public async Task<string> CreateItemAsyc<T>(T item)
     {
