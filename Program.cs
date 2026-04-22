@@ -19,7 +19,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowAngular", policy =>
     {
         policy.WithOrigins(allowedOrigins) // Your Angular port
               .AllowAnyHeader()
@@ -44,7 +44,7 @@ builder.Services.AddScoped<ImageService>();
 
 var app = builder.Build();
 
-app.UseCors();
+app.UseCors("AllowAngular");
 app.MapControllers();
 
 app.Run();
