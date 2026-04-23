@@ -12,7 +12,16 @@ public class UserProfile
 
     [JsonProperty("email")]
     public string Email { get; set; } = string.Empty;
+    public string? PasswordHash { get; set; }   // null for Google users
+
+    public string Provider { get; set; } = "google";
 
     [JsonProperty("modeltype")]
     public static string ModelType => "User"; // Distinguish this from "Agent" in your container
+
+
+    public override string ToString()
+    {
+        return $"Id: {Id}, Name: {Name}, Email: {Email}, Provider: {Provider}, PasswordHash: {PasswordHash}";
+    }
 }

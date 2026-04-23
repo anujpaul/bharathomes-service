@@ -73,4 +73,32 @@ public class CosmosDbService
         
     }
 
+    public async Task<T?> ReadItemByEmailAsync<T>(string email)
+    {
+
+        string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
+
+        System.Console.WriteLine($"Searching for Email: {email}");
+        System.Console.WriteLine($"Model Type: {modelType}");
+
+        var queryDefinition = new QueryDefinition(
+                                        "SELECT * FROM c WHERE c.modeltype = @type AND c.email = @email")
+                                        .WithParameter("@type", modelType)
+                                        .WithParameter("@email", email);
+
+        var feedIterator = _container.GetItemQueryIterator<T>(queryDefinition);
+
+        
+        System.Console.WriteLine($"Reached here");
+        if (feedIterator.HasMoreResults)
+        {
+            var response = await feedIterator.ReadNextAsync();
+            System.Console.WriteLine($"Response");
+            return response.FirstOrDefault(); // Returns null if no item found
+            
+        }
+        System.Console.WriteLine($"Returning empty");
+        return default; // Returns null for reference types
+
+    }
 }
