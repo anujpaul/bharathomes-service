@@ -106,7 +106,7 @@ public class ListingController : ControllerBase
     }
 
     [HttpPost("userProfile")]
-    [Authorize]
+    // [Authorize]
     public async Task<IActionResult> UserProfile()
     {
         foreach (var header in Request.Headers)
