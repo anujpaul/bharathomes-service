@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api")] 
-[Authorize]
+
 public class ListingController : ControllerBase
 {
     private readonly ILogger<ListingController> _logger;
@@ -106,46 +106,90 @@ public class ListingController : ControllerBase
     }
 
     [HttpPost("userProfile")]
+    [Authorize]
     public async Task<IActionResult> UserProfile()
     {
-        // foreach (var header in Request.Headers)
-        // {
-        //     _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
-        // }
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
+        }
         var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? User.FindFirst("sub")?.Value;
-        var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
-                        ?? User.FindFirst("given_name")?.Value;
-        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
-                        ?? User.FindFirst("email")?.Value;
+    var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
+                    ?? User.FindFirst("given_name")?.Value;
+    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
+                    ?? User.FindFirst("email")?.Value;
 
-        _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}", 
-            userId, userName, userEmail);
+    _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}", 
+        userId, userName, userEmail);
+        // var (userId, userName, userEmail) = GetUserFromHeader();
 
-        if (!string.IsNullOrEmpty(userId))
-        {
-            _logger.LogInformation($"MicrosoftId Id : {userId}");
-            UserProfile user = new UserProfile
-                                        {
-                                            Id = userId,
-                                            Name = userName ?? "",
-                                            Email = userEmail ?? ""
-                                        };
-            var userProfile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
+        // // var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
+        // // var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
+        // // var userId = Request.Headers["X-User-Id"].FirstOrDefault();
+        // // var userName = Request.Headers["X-User-Name"].FirstOrDefault();
+        // // var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
 
-            if (userProfile == null)
-            {
-                await _cosmosService.CreateItemAsyc<UserProfile>(user);
-                _logger.LogInformation("User Created");
-                return Created("", new { message = "User created" });
-            }
-            else
-            {
-                return Ok(new { message = "User exists" });
-            }
-        }
-        return Ok(new { message = "Something went wrong" });
         
+        // // _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
+
+        // if (!string.IsNullOrEmpty(userId))
+        // {
+        //     _logger.LogInformation($"MicrosoftId Id : {userId}");
+        //     UserProfile user = new UserProfile
+        //                                 {
+        //                                     Id = userId,
+        //                                     Name = userName ?? "",
+        //                                     Email = userEmail ?? ""
+        //                                 };
+        //     var userProfile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
+
+        //     if (userProfile == null)
+        //     {
+        //         await _cosmosService.CreateItemAsyc<UserProfile>(user);
+        //         _logger.LogInformation("User Created");
+        //         return Created("", new { message = "User created" });
+        //     }
+        // }
+
+        // _logger.LogInformation($"User Id : {userName}");
+
+        
+
+
+
+        return Ok(new { message = "User exists" });
+        
+    }
+
+
+    private (string? id, string? name, string? email) GetUserFromHeader()
+    {
+        var principalHeader = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
+
+        _logger.LogInformation($"MicrosoftPrincipal Header  : {principalHeader}");
+
+        if (string.IsNullOrEmpty(principalHeader))
+            return (null, null, null);
+
+        var json = Encoding.UTF8.GetString(Convert.FromBase64String(principalHeader));
+        var doc = JsonDocument.Parse(json);
+
+        string? id = null;
+        string? name = null;
+        string? email = null;
+
+        foreach (var claim in doc.RootElement.GetProperty("claims").EnumerateArray())
+        {
+            var type = claim.GetProperty("typ").GetString();
+            var value = claim.GetProperty("val").GetString();
+
+            if (type == "nameidentifier") id = value;
+            if (type == "name") name = value;
+            if (type == "emailaddress") email = value;
+        }
+
+        return (id, name, email);
     }
 
 }
