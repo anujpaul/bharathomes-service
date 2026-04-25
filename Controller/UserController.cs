@@ -42,8 +42,8 @@ public class UserController : ControllerBase
         }
         var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? User.FindFirst("sub")?.Value;
-        var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
-                        ?? User.FindFirst("given_name")?.Value;
+        var userName  = User.FindFirst(ClaimTypes.Name)?.Value
+                        ?? User.FindFirst("name")?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
                         ?? User.FindFirst("email")?.Value;
 
