@@ -29,6 +29,7 @@ public class UserService
         
 
         var existing = await _cosmosService.ReadItemByEmailAsync<UserProfile>(email);
+        
         System.Console.WriteLine($"User : {existing}");
         if (existing != null)
             throw new Exception("Email already registered");
@@ -38,7 +39,7 @@ public class UserService
             Id = Guid.NewGuid().ToString(),
             Email = email,
             Name = name,
-            PasswordHash = HashPassword(password),
+            PasswordHash = HashPassword("password"),
             Provider = "local"
         };
         System.Console.WriteLine($"Creating User");

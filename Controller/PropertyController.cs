@@ -9,59 +9,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
-[Route("api")] 
+[Route("api/[controller]")] 
 
-public class ListingController : ControllerBase
+public class PropertyController : ControllerBase
 {
-    private readonly ILogger<ListingController> _logger;
+    private readonly ILogger<PropertyController> _logger;
     private readonly ImageService _imageService;
     private readonly CosmosDbService _cosmosService;
-    public ListingController(ImageService imageService, CosmosDbService cosmosService, ILogger<ListingController> logger)
+    public PropertyController(ImageService imageService, CosmosDbService cosmosService, ILogger<PropertyController> logger)
     {
         _imageService = imageService;
         _cosmosService = cosmosService;
         _logger = logger;
     }
 
-    [HttpGet("test")]
-    public IActionResult Test()
-    {
-        return Ok("Listing API is active");
-    }
-
-    [HttpGet("properties")]
+    [HttpGet]
     public async Task<IActionResult> Properties()
     {
         _logger.LogInformation("Properties called");
-        
-
         var properties = await _cosmosService.ReadItemsAsync<Property>();
         return Ok(properties);
-    }
-
-    [HttpGet("agents")]
-    public async Task<IActionResult> GetAgentsAsync()
-    {
-        _logger.LogInformation("Agents called");
-
-        var agents = await _cosmosService.ReadItemsAsync<Agent>();
-
-        foreach (var agent in agents)
-        {
-            if (agent.Id == "a1")
-            {
-                agent.Image = _imageService.GetImage("Agents", agent.Image);
-            }
-        }
-        return Ok(agents);
-    }
-
-    [HttpGet("agent/{id}")] // Use HttpGet for retrieving data
-    public async Task<IActionResult> GetAgentAsync(string id)
-    {
-        _logger.LogInformation("Agent called");
-        var agents = await _cosmosService.ReadItemAsync<Agent>(id);
-        return Ok(agents);
     }
 
     [HttpGet("property/{id}")]
@@ -69,14 +36,6 @@ public class ListingController : ControllerBase
     {
         return Ok(await _cosmosService.ReadItemAsync<Property>(id));
     }
-
-    [HttpDelete("agent/{id}")]
-    public async Task<string> DeleteAgentAsync(string id)
-    {
-        return await _cosmosService.DeleteItemAsync<Agent>(id);
-    }
-
-    
     
     [HttpDelete("property/{id}")]
     public async Task<string> DeletePropertyAsync(string id)
@@ -115,53 +74,43 @@ public class ListingController : ControllerBase
         }
         var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                     ?? User.FindFirst("sub")?.Value;
-    var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
-                    ?? User.FindFirst("given_name")?.Value;
-    var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
-                    ?? User.FindFirst("email")?.Value;
+        var userName  = User.FindFirst(ClaimTypes.GivenName)?.Value
+                        ?? User.FindFirst("given_name")?.Value;
+        var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
+                        ?? User.FindFirst("email")?.Value;
 
-    _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}", 
-        userId, userName, userEmail);
-        // var (userId, userName, userEmail) = GetUserFromHeader();
+        var iss = User.FindFirst("iss")?.Value;
 
-        // // var MicrosoftPrincipalId = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
-        // // var MicrosoftPrincipalName = Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].FirstOrDefault();
-        // // var userId = Request.Headers["X-User-Id"].FirstOrDefault();
-        // // var userName = Request.Headers["X-User-Name"].FirstOrDefault();
-        // // var userEmail = Request.Headers["X-User-Email"].FirstOrDefault();
+        var provider =
+            iss?.Contains("accounts.google") == true ? "google" :
+            iss?.Contains("microsoft") == true ? "microsoft" :
+            "other";
 
-        
-        // // _logger.LogInformation($"MicrosoftPrincipalName : {MicrosoftPrincipalName}");
+        if (string.IsNullOrEmpty(userId))
+        {
+            return Unauthorized("Missing user identity");
+        }
 
-        // if (!string.IsNullOrEmpty(userId))
-        // {
-        //     _logger.LogInformation($"MicrosoftId Id : {userId}");
-        //     UserProfile user = new UserProfile
-        //                                 {
-        //                                     Id = userId,
-        //                                     Name = userName ?? "",
-        //                                     Email = userEmail ?? ""
-        //                                 };
-        //     var userProfile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
+        _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}, Provider: {provider}", 
+            userId, userName, userEmail, provider);
 
-        //     if (userProfile == null)
-        //     {
-        //         await _cosmosService.CreateItemAsyc<UserProfile>(user);
-        //         _logger.LogInformation("User Created");
-        //         return Created("", new { message = "User created" });
-        //     }
-        // }
+        var profile = await _cosmosService.ReadItemAsync<UserProfile>(userId!);
+        if (profile == null)
+        {
+            profile  = new UserProfile
+            {
+                Id = userId!,
+                Name = userName ?? "Unknown",
+                Email = userEmail ?? "Unknown",
+                Provider = provider
+            };
+            await _cosmosService.CreateItemAsyc<UserProfile>(profile);
+        }
+           
+        // profile = await _cosmosService.ReadItemAsync<UserProfile>(userId!);
 
-        // _logger.LogInformation($"User Id : {userName}");
-
-        
-
-
-
-        return Ok(new { message = "User exists" });
-        
+        return Ok(profile);
     }
-
 
     private (string? id, string? name, string? email) GetUserFromHeader()
     {
@@ -188,7 +137,6 @@ public class ListingController : ControllerBase
             if (type == "name") name = value;
             if (type == "emailaddress") email = value;
         }
-
         return (id, name, email);
     }
 

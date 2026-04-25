@@ -14,7 +14,7 @@ public class UserProfile
     public string Email { get; set; } = string.Empty;
     public string? PasswordHash { get; set; }   // null for Google users
 
-    public string Provider { get; set; } = "google";
+    public string Provider { get; set; } = string.Empty; // "google", "azure", "local"
 
     [JsonProperty("modeltype")]
     public static string ModelType => "User"; // Distinguish this from "Agent" in your container
