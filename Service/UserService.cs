@@ -5,45 +5,60 @@ public class UserService
 {
     private readonly CosmosDbService _cosmosService;
 
-    public UserService(CosmosDbService cosmosService)
+    private readonly ILogger<UserService> _logger;
+
+    public UserService(CosmosDbService cosmosService, ILogger<UserService> logger)
     {
         _cosmosService = cosmosService;
+        _logger = logger;
     }
 
     public async Task<UserProfile?> ValidateCredentials(string email, string password)
     {
-        System.Console.WriteLine($"User : {email} {password}");
+        _logger.LogInformation($"User : {email} {password}");
         var user = await _cosmosService.ReadItemByEmailAsync<UserProfile>(email);
-        System.Console.WriteLine($"Is user empty? : {user}");
+        _logger.LogInformation($"Is user empty? : {user}");
         if (user == null) return null;
 
-        System.Console.WriteLine($"Password in DB: {user.PasswordHash}");
-        System.Console.WriteLine($"Password Hash  {HashPassword(password)}");
+        _logger.LogInformation($"Password in DB: {user.PasswordHash}");
+        _logger.LogInformation($"Password Hash  {HashPassword(password)}");
         // Compare hashed password
         var hash = HashPassword(password);
         return hash == user.PasswordHash ? user : null;
     }
 
-    public async Task<UserProfile> CreateLocalUser(string email, string password, string name)
-    {
-        
+    public async Task<UserProfile?> CreateLocalUser(string? email, string password, string name)
+    {   
+        email = email?.Trim().ToLower();
 
         var existing = await _cosmosService.ReadItemByEmailAsync<UserProfile>(email);
         
-        System.Console.WriteLine($"User : {existing}");
+        _logger.LogInformation($"User : {existing}");
         if (existing != null)
-            throw new Exception("Email already registered");
+        {
+            _logger.LogInformation($"Provider : {existing.Provider}");
+            if (existing.Provider != "local")
+            {
+                // Convert social user → hybrid user
+                existing.PasswordHash = HashPassword(password);
+                existing.Provider = "hybrid"; // or keep both flags
+                _logger.LogInformation("Converting user to hybrid");
+                await _cosmosService.UpdateItemAsync<UserProfile>(existing);
+                return existing;
+            }
+            return null;
+        }
 
         var user = new UserProfile
         {
             Id = Guid.NewGuid().ToString(),
             Email = email,
             Name = name,
-            PasswordHash = HashPassword("password"),
+            PasswordHash = HashPassword(password),
             Provider = "local"
         };
-        System.Console.WriteLine($"Creating User");
-        await _cosmosService.CreateItemAsyc<UserProfile>(user);
+        _logger.LogInformation($"Creating User");
+        await _cosmosService.CreateItemAsync<UserProfile>(user);
         return user;
     }
 

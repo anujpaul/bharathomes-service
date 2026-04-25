@@ -5,7 +5,7 @@ public class UserProfile
 {
     [Key]
     [JsonProperty("id")] // Cosmos DB requires 'id'
-    public string Id { get; set; } = string.Empty; // This will be your Google/Azure User ID
+    public string Id { get; set; } = string.Empty; // This will be your Google/Azure User I
 
     [JsonProperty("name")]
     public string Name { get; set; } = string.Empty;
@@ -16,9 +16,10 @@ public class UserProfile
 
     public string Provider { get; set; } = string.Empty; // "google", "azure", "local"
 
+    public bool AccountStatus {get; set;}
+
     [JsonProperty("modeltype")]
     public static string ModelType => "User"; // Distinguish this from "Agent" in your container
-
 
     public override string ToString()
     {

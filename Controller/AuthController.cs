@@ -58,40 +58,31 @@ public class AuthController : ControllerBase
         {
             var user = await _userService.CreateLocalUser(
                 request.Email, request.Password, request.Name);
+            
+            if (user == null)
+                return Conflict(new { message = "Email already registered" });
 
             var token = _tokenService.GenerateJwt(user);
 
-        //    return Created("", new
-        //     {
-        //         token,
-        //         expiresAt = DateTime.UtcNow.AddHours(1),
-        //         user = new { user.Id, user.Name, user.Email }
-        //     });
-
             var responseList = new List<AuthResponse>
-        {
-            new AuthResponse 
-            { 
-                access_token = token,
-                expires_on = DateTime.UtcNow.AddHours(1).ToString("o"),
-                // You must use 'new UserClaim' for each item in the list
-                user_claims = new List<UserClaim>
-                {
-                    new UserClaim { typ = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", val = user.Id },
-                    new UserClaim { typ = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname", val = user.Name },
-                    new UserClaim { typ = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", val = user.Email }
-                },
-                user_id = user.Email
-            }
-        };
+            {
+                new AuthResponse 
+                { 
+                    access_token = token,
+                    expires_on = DateTime.UtcNow.AddHours(1).ToString("o"),
+                    // You must use 'new UserClaim' for each item in the list
+                    user_claims = new List<UserClaim>
+                    {
+                        new UserClaim { typ = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", val = user.Id },
+                        new UserClaim { typ = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname", val = user.Name },
+                        new UserClaim { typ = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", val = user.Email }
+                    },
+                    user_id = user.Email
+                }
+            };
 
         // Wrap the list in Ok() to return it as an IActionResult
         return Ok(responseList);
-
-
-
-
-
 
         }
         catch (Exception ex)

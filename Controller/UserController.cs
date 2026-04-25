@@ -32,38 +32,91 @@ public class UserController : ControllerBase
         return Ok(agents);
     }
 
-    [HttpPost("userProfile")]
+    // [HttpPost("userProfile")]
+    // [Authorize]
+    // public async Task<IActionResult> UserProfile()
+    // {
+    //     foreach (var header in Request.Headers)
+    //     {
+    //         _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
+    //     }
+    //     var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+    //                 ?? User.FindFirst("sub")?.Value;
+    //     var userName  = User.FindFirst(ClaimTypes.Name)?.Value
+    //                     ?? User.FindFirst("name")?.Value;
+    //     var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
+    //                     ?? User.FindFirst("email")?.Value;
+
+    //     var iss = User.FindFirst("iss")?.Value;
+
+    //     var provider =
+    //         iss?.Contains("accounts.google") == true ? "google" :
+    //         iss?.Contains("microsoft") == true ? "microsoft" :
+    //         "other";
+
+    //     if (string.IsNullOrEmpty(userId))
+    //     {
+    //         return Unauthorized("Missing user identity");
+    //     }
+
+    //     _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}, Provider: {provider}", 
+    //         userId, userName, userEmail, provider);
+
+    //     var profile = await _cosmosService.ReadItemAsync<UserProfile>(userId!);
+    //     if (profile == null)
+    //     {
+    //         profile  = new UserProfile
+    //         {
+    //             Id = userId!,
+    //             Name = userName ?? "Unknown",
+    //             Email = userEmail ?? "Unknown",
+    //             Provider = provider
+    //         };
+    //         await _cosmosService.CreateItemAsyc<UserProfile>(profile);
+    //     }
+           
+    //     // profile = await _cosmosService.ReadItemAsync<UserProfile>(userId!);
+
+    //     return Ok(profile);
+    // }
+
+    [HttpGet("profile")]
     [Authorize]
-    public async Task<IActionResult> UserProfile()
+    public async Task<IActionResult> GetProfile()
     {
-        foreach (var header in Request.Headers)
-        {
-            _logger.LogInformation($"Header ===== {header.Key}: {header.Value}");
-        }
-        var userId    = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                    ?? User.FindFirst("sub")?.Value;
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                   ?? User.FindFirst("sub")?.Value;
         var userName  = User.FindFirst(ClaimTypes.Name)?.Value
                         ?? User.FindFirst("name")?.Value;
         var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
                         ?? User.FindFirst("email")?.Value;
-
         var iss = User.FindFirst("iss")?.Value;
 
-        var provider =
-            iss?.Contains("accounts.google") == true ? "google" :
-            iss?.Contains("microsoft") == true ? "microsoft" :
-            "other";
+        // var provider =
+        //     iss?.Contains("accounts.google") == true ? "google" :
+        //     iss?.Contains("microsoft") == true ? "microsoft" :
+        //     "local";
 
-        if (string.IsNullOrEmpty(userId))
+        var provider = iss switch
         {
-            return Unauthorized("Missing user identity");
-        }
+            string s when s.Contains("accounts.google.com") => "google",
+            string s when s.Contains("login.microsoftonline.com") => "microsoft",
+            _ => "local"
+        };
+        
 
-        _logger.LogInformation("UserId: {id}, Name: {name}, Email: {email}, Provider: {provider}", 
-            userId, userName, userEmail, provider);
+        _logger.LogInformation("Name: {name}, Email: {email}, Provider: {provider}, iss : {iss}", 
+             userName, userEmail, provider, iss);
+        
+        userEmail = userEmail?.Trim().ToLower();
 
-        var profile = await _cosmosService.ReadItemAsync<UserProfile>(userId!);
-        if (profile == null)
+        if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail))
+            return Unauthorized();
+        
+
+        var profile = await _cosmosService.ReadItemByEmailAsync<UserProfile>(userEmail);
+
+        if (provider != "local" && profile == null)
         {
             profile  = new UserProfile
             {
@@ -72,27 +125,10 @@ public class UserController : ControllerBase
                 Email = userEmail ?? "Unknown",
                 Provider = provider
             };
-            await _cosmosService.CreateItemAsyc<UserProfile>(profile);
+            await _cosmosService.CreateItemAsync<UserProfile>(profile);
+            
         }
-           
-        // profile = await _cosmosService.ReadItemAsync<UserProfile>(userId!);
-
-        return Ok(profile);
-    }
-
-    [HttpGet("profile")]
-    [Authorize]
-    public async Task<IActionResult> GetProfile()
-    {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                  ?? User.FindFirst("sub")?.Value;
         
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
-
-        _logger.LogInformation($"User ID from token: {userId}");
-        
-        var profile = await _cosmosService.ReadItemAsync<UserProfile>(userId);
         if (profile == null)
             return NotFound();
 

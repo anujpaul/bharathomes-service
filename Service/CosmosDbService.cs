@@ -7,11 +7,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 public class CosmosDbService
 {
     private IConfiguration _config;
+
+    private readonly ILogger<CosmosDbService> _logger;
     Container _container;
-    public CosmosDbService(IConfiguration config, Container container)
+    public CosmosDbService(IConfiguration config, Container container, ILogger<CosmosDbService> logger)
     {
         _config = config;
         _container = container;
+        _logger = logger;
 
     }
 
@@ -51,7 +54,7 @@ public class CosmosDbService
     }
     
 
-    public async Task<string> CreateItemAsyc<T>(T item)
+    public async Task<string> CreateItemAsync<T>(T item)
     {
         if (item == null)
             throw new ArgumentNullException(nameof(item));
@@ -78,8 +81,8 @@ public class CosmosDbService
 
         string modelType = typeof(T).GetProperty("ModelType")?.GetValue(null)?.ToString()?? typeof(T).Name;
 
-        System.Console.WriteLine($"Searching for Email: {email}");
-        System.Console.WriteLine($"Model Type: {modelType}");
+        _logger.LogInformation($"Searching for Email: {email}");
+        _logger.LogInformation($"Model Type: {modelType}");
 
         var queryDefinition = new QueryDefinition(
                                         "SELECT * FROM c WHERE c.modeltype = @type AND c.email = @email")
@@ -89,16 +92,32 @@ public class CosmosDbService
         var feedIterator = _container.GetItemQueryIterator<T>(queryDefinition);
 
         
-        System.Console.WriteLine($"Reached here");
+        _logger.LogInformation($"Reached here");
         if (feedIterator.HasMoreResults)
         {
             var response = await feedIterator.ReadNextAsync();
-            System.Console.WriteLine($"Response");
+            _logger.LogInformation($"Response");
             return response.FirstOrDefault(); // Returns null if no item found
             
         }
-        System.Console.WriteLine($"Returning empty");
+        _logger.LogInformation($"Returning empty");
         return default; // Returns null for reference types
 
+    }
+
+    internal async Task<T> UpdateItemAsync<T>(T item)
+    {
+        if (item == null)
+            throw new ArgumentNullException(nameof(item));
+
+        dynamic dynamicItem = item;
+
+        var response = await _container.ReplaceItemAsync<T>(
+            item,
+            dynamicItem.Id,
+            new PartitionKey(dynamicItem.Id)
+        );
+
+        return response.Resource;
     }
 }
