@@ -49,3 +49,19 @@ steps:
     packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
     RuntimeStack: 'DOTNETCORE|10.0'
     DeploymentTypeLinux: 'oneDeploy'
+
+- task: SonarCloudPrepare@4
+  inputs:
+    SonarQube: 'SonarQube'
+    organization: 'paulanuj'
+    scannerMode: 'dotnet'
+    projectKey: 'paulanuj_Bharat-Homes---Service'
+    projectName: 'paulanuj_Bharat-Homes---Service'
+
+- task: SonarCloudAnalyze@4
+  inputs:
+    jdkversion: 'JAVA_HOME_17_X64'
+
+- task: SonarCloudPublish@4
+  inputs:
+    pollingTimeoutSec: '300'
