@@ -76,6 +76,7 @@ public class UserController : ControllerBase
             }
             else if (profile.Provider == "local")
             {
+                _logger.LogInformation("Updating easy auth to hybrid");
                 profile.Provider = "hybrid";
                 await _cosmosService.UpdateItemAsync<UserProfile>(profile);
             }
