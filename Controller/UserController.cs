@@ -150,12 +150,14 @@ public class UserController : ControllerBase
 
         if (profile == null)
             return NotFound();
-            
+
         profile.Name = userProfile.Name;
         profile.Email = userProfile.Email;
+        profile.Phone = userProfile.Phone;
+        _logger.LogInformation($"Phone Number {userProfile.Phone}");
+        _logger.LogInformation($"Profile === {profile.Phone}");
         await _cosmosService.UpdateItemAsync<UserProfile>(profile);
             
-        
         if (profile == null)
             return NotFound();
 

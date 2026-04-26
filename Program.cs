@@ -86,6 +86,15 @@ builder.Services.AddSingleton<Container>(sp =>
 builder.Services.AddSingleton<CosmosDbService>();
 builder.Services.AddScoped<ImageService>();
 
+builder.Logging.ClearProviders();
+
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+    options.IncludeScopes = true;
+    options.SingleLine = true;
+});
+
 var app = builder.Build();
 
 app.UseCors("AllowAngular");
