@@ -60,5 +60,5 @@ public class Property
     public List<string>? Amenities { get; set; }
 
     [JsonProperty("modeltype")]
-    public string ModelType { get; set; } = "Property"; // ← also changed to instance property
+    public static string ModelType { get; set; } = "Property"; // ← also changed to instance property
 }
