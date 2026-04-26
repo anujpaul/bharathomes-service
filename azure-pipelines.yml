@@ -32,8 +32,8 @@ steps:
     SonarQube: 'SonarQube'
     organization: 'paulanuj'
     scannerMode: 'dotnet'
+    dotnetScannerVersion: '10.0'
     projectKey: 'paulanuj_Bharat-Homes---Service'
-    projectName: 'paulanuj_Bharat-Homes---Service'
 
 - task: DotNetCoreCLI@2
   inputs:
