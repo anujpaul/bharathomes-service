@@ -14,24 +14,40 @@ variables:
 
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+# - script: echo Hello, world!
+#   displayName: 'Run a one-line script'
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+# - script: |
+#     echo Add other tasks to build, test, and deploy your project.
+#     echo See https://aka.ms/yaml
+#   displayName: 'Run a multi-line script'
 
 - task: UseDotNet@2
   inputs:
     packageType: 'sdk'
     version: '10.x'
 
+- task: SonarCloudPrepare@4
+  inputs:
+    SonarQube: 'SonarQube'
+    organization: 'paulanuj'
+    scannerMode: 'dotnet'
+    projectKey: 'paulanuj_Bharat-Homes---Service'
+    projectName: 'paulanuj_Bharat-Homes---Service'
+
 - task: DotNetCoreCLI@2
   inputs:
     azureSubscription: 'Azure Subscription(d7390d9e-0635-43f5-8460-c268e7d9a219)'
     command: 'build'
     arguments: '--configuration $(buildConfiguration)'
+
+- task: SonarCloudAnalyze@4
+  inputs:
+    jdkversion: 'JAVA_HOME_17_X64'
+
+- task: SonarCloudPublish@4
+  inputs:
+    pollingTimeoutSec: '300'
 
 - task: DotNetCoreCLI@2
   inputs:
@@ -50,18 +66,3 @@ steps:
     RuntimeStack: 'DOTNETCORE|10.0'
     DeploymentTypeLinux: 'oneDeploy'
 
-- task: SonarCloudPrepare@4
-  inputs:
-    SonarQube: 'SonarQube'
-    organization: 'paulanuj'
-    scannerMode: 'dotnet'
-    projectKey: 'paulanuj_Bharat-Homes---Service'
-    projectName: 'paulanuj_Bharat-Homes---Service'
-
-- task: SonarCloudAnalyze@4
-  inputs:
-    jdkversion: 'JAVA_HOME_17_X64'
-
-- task: SonarCloudPublish@4
-  inputs:
-    pollingTimeoutSec: '300'
