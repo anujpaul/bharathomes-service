@@ -80,7 +80,7 @@ public class UserController : ControllerBase
     //     return Ok(profile);
     // }
 
-    [HttpGet("profile")]
+    [HttpPost("profile")]
     [Authorize]
     public async Task<IActionResult> GetProfile()
     {
@@ -136,6 +136,34 @@ public class UserController : ControllerBase
 
         return Ok(profile);
     }
+
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody]UserProfile userProfile)
+    { 
+
+        var userEmail = userProfile.Email;
+        
+        userEmail = userEmail?.Trim().ToLower();
+
+        var profile = await _cosmosService.ReadItemByEmailAsync<UserProfile>(userProfile.Email);
+
+        if (profile == null)
+            return NotFound();
+            
+        profile.Name = userProfile.Name;
+        profile.Email = userProfile.Email;
+        await _cosmosService.UpdateItemAsync<UserProfile>(profile);
+            
+        
+        if (profile == null)
+            return NotFound();
+
+        profile.PasswordHash = null; // Don't return password hash
+
+        return Ok(profile);
+    }
+
 
     [HttpGet("profile/{id}")]
     public async Task<IActionResult> GetProfileById(string id)
