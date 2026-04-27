@@ -36,12 +36,17 @@ public class AgentController : ControllerBase
         return Ok(await _cosmosService.CreateItemAsync<Agent>(agent));
     }
 
-    [HttpGet("agent/{id}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetAgentById(string id)
     {
         var agent = await _cosmosService.ReadItemAsync<Agent>(id);
         if (agent == null)
             return NotFound();
+        if (agent.Id == "a1")
+        {
+            _logger.LogInformation("Pulling image from drive");
+            agent.Image = _imageService.GetImage("Agents", agent.Image);
+        }
 
         return Ok(agent);
     }
