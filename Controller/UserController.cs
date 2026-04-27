@@ -9,27 +9,13 @@ public class UserController : ControllerBase
 {
     private readonly CosmosDbService _cosmosService;
     private readonly ILogger<UserController> _logger;
-    private readonly ImageService _imageService;
 
-    public UserController(CosmosDbService cosmosService, ILogger<UserController> logger, ImageService imageService)
+
+    public UserController(CosmosDbService cosmosService, ILogger<UserController> logger)
     {
         _cosmosService = cosmosService;
         _logger = logger;
-        _imageService = imageService;
-    }
-
-    [HttpGet("agents")]
-    public async Task<IActionResult> GetAgentsAsync()
-    {
-        var agents = await _cosmosService.ReadItemsAsync<Agent>();
-        foreach (var agent in agents)
-        {
-            if (agent.Id == "a1")
-            {
-                agent.Image = _imageService.GetImage("Agents", agent.Image);
-            }
-        }
-        return Ok(agents);
+        
     }
 
     [HttpGet("profile")]
@@ -51,10 +37,10 @@ public class UserController : ControllerBase
             _ => "local"
         };
         
+        userEmail = userEmail?.Trim().ToLower();
+
         _logger.LogInformation("Name: {name}, Email: {email}, Provider: {provider}, iss : {iss}", 
              userName, userEmail, provider, iss);
-        
-        userEmail = userEmail?.Trim().ToLower();
 
         if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(userEmail))
             return Unauthorized();   
@@ -74,7 +60,7 @@ public class UserController : ControllerBase
                 };
                 await _cosmosService.CreateItemAsync<UserProfile>(profile);
             }
-            else if (profile.Provider == "local")
+            else //if (profile.Provider == "local")
             {
                 _logger.LogInformation("Updating easy auth to hybrid");
                 profile.Provider = "hybrid";
@@ -119,34 +105,14 @@ public class UserController : ControllerBase
         return Ok(profile);
     }
 
+    // [HttpGet("profile/{id}")]
+    // public async Task<IActionResult> GetProfileById(string id)
+    // {
+    //     var profile = await _cosmosService.ReadItemAsync<UserProfile>(id);
+    //     if (profile == null)
+    //         return NotFound();
 
-    [HttpGet("profile/{id}")]
-    public async Task<IActionResult> GetProfileById(string id)
-    {
-        var profile = await _cosmosService.ReadItemAsync<UserProfile>(id);
-        if (profile == null)
-            return NotFound();
-
-        return Ok(profile);
-    }
-
-    [HttpGet("agent/{id}")]
-    public async Task<IActionResult> GetAgentById(string id)
-    {
-        var agent = await _cosmosService.ReadItemAsync<Agent>(id);
-        if (agent == null)
-            return NotFound();
-
-        return Ok(agent);
-    }
-
-    [HttpDelete("agent/{id}")]
-    public async Task<IActionResult> DeleteAgent(string id)
-    {
-        await _cosmosService.DeleteItemAsync<Agent>(id);
-        return Ok();
-    }
-
-  
+    //     return Ok(profile);
+    // }
 
 }

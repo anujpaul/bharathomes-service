@@ -15,14 +15,12 @@ public class UserService
 
     public async Task<UserProfile?> ValidateCredentials(string email, string password)
     {
-        _logger.LogInformation($"User : {email} {password}");
         var user = await _cosmosService.ReadItemByEmailAsync<UserProfile>(email);
         _logger.LogInformation($"Is user empty? : {user}");
-        if (user == null) return null;
 
-        _logger.LogInformation($"Password in DB: {user.PasswordHash}");
-        _logger.LogInformation($"Password Hash  {HashPassword(password)}");
-        // Compare hashed password
+        if (user == null) 
+            return null;
+
         var hash = HashPassword(password);
         return hash == user.PasswordHash ? user : null;
     }
@@ -31,7 +29,10 @@ public class UserService
     {   
         email = email?.Trim().ToLower();
 
-        var existing = await _cosmosService.ReadItemByEmailAsync<UserProfile>(email);
+        if (email == null)
+            return null;
+
+        var existing = await _cosmosService.ReadItemByEmailAsync<UserProfile>(email!);
         
         _logger.LogInformation($"User : {existing}");
         if (existing != null)
