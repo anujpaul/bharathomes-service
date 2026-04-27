@@ -27,7 +27,7 @@ steps:
     packageType: 'sdk'
     version: '10.x'
 
-- task: SonarCloudPrepare@1
+- task: SonarCloudPrepare@4
   inputs:
     SonarQube: 'SonarQube'
     organization: 'paulanuj'
