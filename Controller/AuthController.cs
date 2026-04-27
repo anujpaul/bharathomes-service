@@ -18,7 +18,7 @@ public class AuthController : ControllerBase
     public record RegisterRequest(string Email, string Password, string Name);
 
     [HttpPost("login")]
-[AllowAnonymous]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userService.ValidateCredentials(request.Email, request.Password);

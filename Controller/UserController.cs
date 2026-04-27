@@ -93,8 +93,7 @@ public class UserController : ControllerBase
         profile.Name = userProfile.Name;
         profile.Email = userProfile.Email;
         profile.Phone = userProfile.Phone;
-        _logger.LogInformation($"Phone Number {userProfile.Phone}");
-        _logger.LogInformation($"Profile === {profile.Phone}");
+
         await _cosmosService.UpdateItemAsync<UserProfile>(profile);
             
         if (profile == null)
@@ -105,14 +104,14 @@ public class UserController : ControllerBase
         return Ok(profile);
     }
 
-    // [HttpGet("profile/{id}")]
-    // public async Task<IActionResult> GetProfileById(string id)
-    // {
-    //     var profile = await _cosmosService.ReadItemAsync<UserProfile>(id);
-    //     if (profile == null)
-    //         return NotFound();
+    [HttpGet("profile/{id}")]
+    public async Task<IActionResult> GetProfileById(string id)
+    {
+        var profile = await _cosmosService.ReadItemAsync<UserProfile>(id);
+        if (profile == null)
+            return NotFound();
 
-    //     return Ok(profile);
-    // }
+        return Ok(profile);
+    }
 
 }

@@ -29,6 +29,13 @@ public class AgentController : ControllerBase
         return Ok(agents);
     }
 
+    [HttpPost("createagent")]
+    public async Task<IActionResult> CreateAgentAsync([FromBody] Agent agent)
+    {
+        _logger.LogInformation($"Agent body : {System.Text.Json.JsonSerializer.Serialize(agent)}");
+        return Ok(await _cosmosService.CreateItemAsync<Agent>(agent));
+    }
+
     [HttpGet("agent/{id}")]
     public async Task<IActionResult> GetAgentById(string id)
     {

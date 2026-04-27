@@ -31,24 +31,20 @@ public class PropertyController : ControllerBase
         return Ok(properties);
     }
 
-    [HttpGet("property/{id}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetPropertyById(string id)
     {
+        _logger.LogInformation("here");
         return Ok(await _cosmosService.ReadItemAsync<Property>(id));
     }
     
-    [HttpDelete("property/{id}")]
+    [HttpDelete("{id}")]
     public async Task<string> DeletePropertyAsync(string id)
     {
         return await _cosmosService.DeleteItemAsync<Property>(id);
     }
 
-    [HttpPost("createagent")]
-    public async Task<IActionResult> createAgentAsync([FromBody] Agent agent)
-    {
-        _logger.LogInformation($"Agent body : {System.Text.Json.JsonSerializer.Serialize(agent)}");
-        return Ok(await _cosmosService.CreateItemAsync<Agent>(agent));
-    }
+    
 
     [HttpPost("createProperty")]
     public async Task<IActionResult> createPropertyAsync([FromBody] Property property)
@@ -57,39 +53,11 @@ public class PropertyController : ControllerBase
         return Ok(await _cosmosService.CreateItemAsync<Property>(property));
     }
     
-    [HttpPost("createUser")]
-    public async Task<IActionResult> createUserAsync([FromBody] UserProfile user)
-    {
-        _logger.LogInformation($"User called : {System.Text.Json.JsonSerializer.Serialize(user)}");
-        return Ok(await _cosmosService.CreateItemAsync<UserProfile>(user));
-    }
-    
-    private (string? id, string? name, string? email) GetUserFromHeader()
-    {
-        var principalHeader = Request.Headers["X-MS-CLIENT-PRINCIPAL"].FirstOrDefault();
-
-        _logger.LogInformation($"MicrosoftPrincipal Header  : {principalHeader}");
-
-        if (string.IsNullOrEmpty(principalHeader))
-            return (null, null, null);
-
-        var json = Encoding.UTF8.GetString(Convert.FromBase64String(principalHeader));
-        var doc = JsonDocument.Parse(json);
-
-        string? id = null;
-        string? name = null;
-        string? email = null;
-
-        foreach (var claim in doc.RootElement.GetProperty("claims").EnumerateArray())
-        {
-            var type = claim.GetProperty("typ").GetString();
-            var value = claim.GetProperty("val").GetString();
-
-            if (type == "nameidentifier") id = value;
-            if (type == "name") name = value;
-            if (type == "emailaddress") email = value;
-        }
-        return (id, name, email);
-    }
+    // [HttpPost("createUser")]
+    // public async Task<IActionResult> CreateUserAsync([FromBody] UserProfile user)
+    // {
+    //     _logger.LogInformation($"User called : {System.Text.Json.JsonSerializer.Serialize(user)}");
+    //     return Ok(await _cosmosService.CreateItemAsync<UserProfile>(user));
+    // }
 
 }
