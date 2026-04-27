@@ -22,6 +22,7 @@ public class AgentController : ControllerBase
         {
             if (agent.Id == "a1")
             {
+                _logger.LogInformation("Pulling image from drive");
                 agent.Image = _imageService.GetImage("Agents", agent.Image);
             }
         }
