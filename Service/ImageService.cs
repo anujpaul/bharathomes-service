@@ -22,7 +22,7 @@ public class ImageService
 
      public async Task<string> UploadImageAsync(Stream fileStream, string folderName, string fileName, string contentType)
     {
-        string? connectionString = _config["StorageConnectionString"];
+        string? connectionString = _config["ConnectionStrings:StorageConnection"];
         string? containerName = _config["StorageContainer"];
 
         var containerClient = new BlobContainerClient(connectionString, containerName);
