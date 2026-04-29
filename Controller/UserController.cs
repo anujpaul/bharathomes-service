@@ -122,6 +122,8 @@ public class UserController : ControllerBase
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
         if (file == null || file.Length == 0) return BadRequest(new { message = "No file provided" });
 
+        _logger.LogInformation($"File Information {file} type: {file.ContentType}");
+
         var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif" };
         if (!allowedTypes.Contains(file.ContentType))
             return BadRequest(new { message = "Only JPEG, PNG and WebP allowed" });
