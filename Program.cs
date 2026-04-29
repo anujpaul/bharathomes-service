@@ -1,22 +1,33 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("AzureSqlDb");
+var connectionString = builder.Configuration.GetConnectionString("SqlConnection");
 string cosmosAccount = builder.Configuration["CosmosAccount"]!;
 string cosmosDbName = builder.Configuration["CosmosDbName"]!;
 string cosmosContainerName = builder.Configuration["CosmosContainerName"]!;
 string cosmosKey = builder.Configuration["CosmosKey"]!;
 
+
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
                      ?? Array.Empty<string>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        });
+
+builder.Services.AddDbContext<SqlDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 builder.Services.AddCors(options =>
 {
@@ -86,14 +97,14 @@ builder.Services.AddSingleton<Container>(sp =>
 builder.Services.AddSingleton<CosmosDbService>();
 builder.Services.AddScoped<ImageService>();
 
-builder.Logging.ClearProviders();
+// builder.Logging.ClearProviders();
 
-builder.Logging.AddSimpleConsole(options =>
-{
-    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-    options.IncludeScopes = true;
-    options.SingleLine = true;
-});
+// builder.Logging.AddSimpleConsole(options =>
+// {
+//     options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+//     options.IncludeScopes = true;
+//     options.SingleLine = true;
+// });
 
 var app = builder.Build();
 

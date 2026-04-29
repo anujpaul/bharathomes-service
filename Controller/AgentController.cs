@@ -1,60 +1,88 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
 [ApiController]
 [Route("api/[controller]")]
 public class AgentController : ControllerBase
 {
-    private readonly CosmosDbService _cosmosService;
     private readonly ILogger<AgentController> _logger;
-
+    private readonly SqlDbContext _db;
     private readonly ImageService _imageService;
-     public AgentController(CosmosDbService cosmosService, ILogger<AgentController> logger, ImageService imageService)
+
+    public AgentController(ILogger<AgentController> logger, ImageService imageService, SqlDbContext db)
     {
-        _cosmosService = cosmosService;
         _logger = logger;
         _imageService = imageService;
-
+        _db = db;
     }
+
     [HttpGet("agents")]
-    public async Task<IActionResult> GetAgentsAsync()
+    public async Task<IActionResult> GetAgents()
     {
-        var agents = await _cosmosService.ReadItemsAsync<Agent>();
-        foreach (var agent in agents)
-        {
-            if (agent.Id == "a1")
+        var agents = await _db.Agents
+            .Select(a => new
             {
-                _logger.LogInformation("Pulling image from drive");
-                agent.Image = _imageService.GetImage("Agents", agent.Image);
-            }
-        }
-        return Ok(agents);
-    }
+                a.Id,
+                a.UserProfile.Name,
+                a.UserProfile.Email,
+                a.UserProfile.Phone,
+                a.UserProfile.UserPhoto,
+                a.Rating,
+                a.ListingsCount,
+                a.Specialization,
+                a.ReraRegistrationNumber,
+                a.OperatingLocation
+            })
+            .ToListAsync();
 
-    [HttpPost("createagent")]
-    public async Task<IActionResult> CreateAgentAsync([FromBody] Agent agent)
-    {
-        _logger.LogInformation($"Agent body : {System.Text.Json.JsonSerializer.Serialize(agent)}");
-        return Ok(await _cosmosService.CreateItemAsync<Agent>(agent));
+        return Ok(agents);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetAgentById(string id)
     {
-        var agent = await _cosmosService.ReadItemAsync<Agent>(id);
+        var agent = await _db.Agents
+            .Include(a => a.UserProfile)
+            .Where(a => a.Id == id)
+            .Select(a => new
+            {
+                a.Id,
+                a.UserProfile.Name,
+                a.UserProfile.Email,
+                a.UserProfile.Phone,
+                a.UserProfile.UserPhoto,
+                a.Rating,
+                a.ListingsCount,
+                a.Specialization,
+                a.ReraRegistrationNumber,
+                a.OperatingLocation
+            })
+            .FirstOrDefaultAsync();
+
         if (agent == null)
-            return NotFound();
-        if (agent.Id == "a1")
-        {
-            _logger.LogInformation("Pulling image from drive");
-            agent.Image = _imageService.GetImage("Agents", agent.Image);
-        }
+            return NotFound(new { message = "Agent not found" });
 
         return Ok(agent);
     }
 
-    [HttpDelete("agent/{id}")]
+    [HttpPost("createagent")]
+    public async Task<IActionResult> CreateAgent([FromBody] Agent agent)
+    {
+        _logger.LogInformation($"Creating agent: {agent.Id}");
+        _db.Agents.Add(agent);
+        await _db.SaveChangesAsync();
+        return Ok(agent);
+    }
+
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAgent(string id)
     {
-        await _cosmosService.DeleteItemAsync<Agent>(id);
-        return Ok();
+        var agent = await _db.Agents.FindAsync(id);
+        if (agent == null)
+            return NotFound(new { message = "Agent not found" });
+
+        _db.Agents.Remove(agent);
+        await _db.SaveChangesAsync();
+        return Ok(new { message = "Agent deleted" });
     }
 }

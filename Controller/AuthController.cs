@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -88,6 +89,21 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody]ForgotPasswordRequest request)
+    {
+        try
+        {
+            await _userService.InitiatePasswordReset(request.Email);
+            return Ok(new {message = "If an account exists, a reset email has been sent"});
+        }
+        catch(Exception ex)
+        {
+            return StatusCode(500, new {message = ex.Message});
         }
     }
 }

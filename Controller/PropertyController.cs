@@ -16,18 +16,41 @@ public class PropertyController : ControllerBase
     private readonly ILogger<PropertyController> _logger;
     private readonly ImageService _imageService;
     private readonly CosmosDbService _cosmosService;
-    public PropertyController(ImageService imageService, CosmosDbService cosmosService, ILogger<PropertyController> logger)
+
+    private readonly SqlDbContext _db;
+    public PropertyController(ImageService imageService, CosmosDbService cosmosService, ILogger<PropertyController> logger, SqlDbContext db)
     {
         _imageService = imageService;
         _cosmosService = cosmosService;
         _logger = logger;
+        _db = db;
     }
 
     [HttpGet]
     public async Task<IActionResult> Properties()
     {
         _logger.LogInformation("Properties called");
-        var properties = await _cosmosService.ReadItemsAsync<Property>();
+        // var properties = await _cosmosService.ReadItemsAsync<Property>();
+        var properties = await _db.Properties
+            .Select(p => new
+            {
+                p.Id,
+                p.Title,
+                p.Price,
+                p.Location,
+                p.City,
+                p.Beds,
+                p.Baths,
+                p.Sqft,
+                p.Type,
+                p.IsFeatured,
+                p.ExpresswayProximity,
+                Images = p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(),
+                Amenities = p.Amenities.Select(a => a.Name).ToList(),
+            })
+            .ToListAsync();
+
+
         return Ok(properties);
     }
 
@@ -35,13 +58,58 @@ public class PropertyController : ControllerBase
     public async Task<IActionResult> GetPropertyById(string id)
     {
         _logger.LogInformation("here");
-        return Ok(await _cosmosService.ReadItemAsync<Property>(id));
+
+        var property = await _db.Properties
+    .Where(p => p.Id == id)
+    .Select(p => new
+    {
+        p.Id,
+        p.Title,
+        p.Price,
+        p.Location,
+        p.City,
+        p.Beds,
+        p.Baths,
+        p.Sqft,
+        p.Type,
+        p.IsFeatured,
+        p.ExpresswayProximity,
+        p.IsReraRegistered,
+        p.ReraRegistrationNumber,
+        p.VastuOrientation,
+        p.CreatedAt,
+        Images = p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(),
+        Amenities = p.Amenities.Select(a => a.Name).ToList(),
+        Agents = p.PropertyAgents.Select(pa => new
+        {
+            pa.Agent.Id,
+            pa.Agent.UserProfile.Name,
+            pa.Agent.UserProfile.Email,
+            pa.Agent.UserProfile.Phone,
+            pa.Agent.Rating,
+            pa.Agent.ListingsCount,
+            pa.Agent.Specialization
+        }).ToList()
+    })
+    .FirstOrDefaultAsync();
+
+        if (property == null)
+            return NotFound(new { message = "Property not found" });
+        return Ok(property);
     }
     
     [HttpDelete("{id}")]
-    public async Task<string> DeletePropertyAsync(string id)
+    public async Task<IActionResult> DeletePropertyAsync(string id)
     {
-        return await _cosmosService.DeleteItemAsync<Property>(id);
+        var property = await _db.Properties.FindAsync(id);
+
+        if (property == null)
+            return NotFound(new { message = "Property not found" });
+
+        _db.Properties.Remove(property);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Property deleted" });
     }
 
     
@@ -50,7 +118,9 @@ public class PropertyController : ControllerBase
     public async Task<IActionResult> createPropertyAsync([FromBody] Property property)
     {
         _logger.LogInformation($"Property called : {System.Text.Json.JsonSerializer.Serialize(property)}");
-        return Ok(await _cosmosService.CreateItemAsync<Property>(property));
+        _db.Properties.Add(property);
+        await _db.SaveChangesAsync();
+        return Ok(property);
     }
     
     // [HttpPost("createUser")]

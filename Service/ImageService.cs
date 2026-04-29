@@ -1,3 +1,6 @@
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+
 public class ImageService
 {
     private readonly IConfiguration _config;
@@ -15,5 +18,25 @@ public class ImageService
         string returnUrl = $"{storageAccountUrl}/images/{folderName}/{blobName}{sasToken}";
         _logger.LogInformation($"Return URL : {returnUrl}");
         return returnUrl;
+    }
+
+     public async Task<string> UploadImageAsync(Stream fileStream, string folderName, string fileName, string contentType)
+    {
+        string? connectionString = _config["StorageConnectionString"];
+        string? containerName = _config["StorageContainer"];
+
+        var containerClient = new BlobContainerClient(connectionString, containerName);
+        var blobPath = $"images/{folderName}/{fileName}";
+        var blobClient = containerClient.GetBlobClient(blobPath);
+
+        await blobClient.UploadAsync(fileStream, new BlobHttpHeaders
+        {
+            ContentType = contentType
+        }); 
+
+        _logger.LogInformation($"Uploaded image to: {blobPath}");
+
+        // Return using GetImage so SAS token is included
+        return GetImage(folderName, fileName);
     }
 }
