@@ -84,7 +84,7 @@ public class AuthController : ControllerBase
             .AnyAsync(u => u.Email == request.Email && u.Provider != "local");
 
         if (exists)
-            await _otpService.SendMergeOtpAsync(request.Email);
+            await _otpService.SendOtpAsync(request.Email);
 
         return Ok(new { message = "If a matching account exists, an OTP has been sent." });
     }
@@ -149,7 +149,7 @@ public class AuthController : ControllerBase
     {
         var exists = await _db.UserProfiles.AnyAsync(u => u.Email == request.Email);
         if (exists)
-            await _otpService.SendResetOtpAsync(request.Email);
+            await _otpService.SendOtpAsync(request.Email);
 
         // Always return OK — don't reveal if account exists
         return Ok(new { message = "If an account exists, a reset code has been sent." });
@@ -159,7 +159,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> VerifyReset([FromBody] VerifyResetRequest request)
     {
-        if (!_otpService.ValidateResetOtp(request.Email, request.Otp))
+        if (!_otpService.ValidateOtp(request.Email, request.Otp))
             return Unauthorized(new { message = "Invalid or expired code" });
 
         if (request.NewPassword.Length < 8)

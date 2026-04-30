@@ -11,26 +11,9 @@ public class OtpService
         _email = email;
     }
 
-    public async Task SendMergeOtpAsync(string toEmail)
-    {
-        var otp = Random.Shared.Next(100000, 999999).ToString();
-        _cache.Set($"merge_otp:{toEmail}", otp, TimeSpan.FromMinutes(10));
-        await _email.SendAsync(toEmail, "Verify your identity — BharatHomes",
-            $"Your one-time code is <b>{otp}</b>. It expires in 10 minutes.");
-    }
 
-    public bool ValidateOtp(string email, string otp)
-    {
-        var key = $"merge_otp:{email}";
-        if (_cache.TryGetValue(key, out string? stored) && stored == otp)
-        {
-            _cache.Remove(key);
-            return true;
-        }
-        return false;
-    }
-
-    public async Task SendResetOtpAsync(string toEmail)
+    
+    public async Task SendOtpAsync(string toEmail)
     {
         var otp = Random.Shared.Next(100000, 999999).ToString();
         _cache.Set($"reset_otp:{toEmail}", otp, TimeSpan.FromMinutes(10));
@@ -38,7 +21,7 @@ public class OtpService
             $"Your password reset code is <b>{otp}</b>. It expires in 10 minutes.");
     }
 
-    public bool ValidateResetOtp(string email, string otp)
+    public bool ValidateOtp(string email, string otp)
     {
         var key = $"reset_otp:{email}";
         if (_cache.TryGetValue(key, out string? stored) && stored == otp)
