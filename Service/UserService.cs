@@ -7,6 +7,10 @@ public class UserService
     private readonly SqlDbContext _db;
     private readonly ILogger<UserService> _logger;
 
+    // Add this result type at the top of the file (or a separate file)
+    public enum RegisterStatus { Created, EmailTaken, RequiresOtp }
+    public record RegisterResult(RegisterStatus Status, UserProfile? User = null);
+
     public UserService(SqlDbContext db, ILogger<UserService> logger)
     {
         _db = db;
@@ -27,31 +31,20 @@ public class UserService
         return hash == user.PasswordHash ? user : null;
     }
 
-    public async Task<UserProfile?> CreateLocalUser(string? email, string password, string name)
+    public async Task<RegisterResult> CreateLocalUser(string? email, string password, string name)
     {
         email = email?.Trim().ToLower();
+        if (email == null) return new RegisterResult(RegisterStatus.EmailTaken);
 
-        if (email == null)
-            return null;
-
-        var existing = await _db.UserProfiles
-            .FirstOrDefaultAsync(u => u.Email == email);
-
-        _logger.LogInformation($"User : {existing}");
+        var existing = await _db.UserProfiles.FirstOrDefaultAsync(u => u.Email == email);
 
         if (existing != null)
         {
-            _logger.LogInformation($"Provider : {existing.Provider}");
+            // Social account exists — don't touch it yet, demand OTP first
             if (existing.Provider != "local")
-            {
-                // Convert social user → hybrid user
-                existing.PasswordHash = HashPassword(password);
-                existing.Provider = "hybrid";
-                _logger.LogInformation("Converting user to hybrid");
-                await _db.SaveChangesAsync();
-                return existing;
-            }
-            return null; // email already registered
+                return new RegisterResult(RegisterStatus.RequiresOtp);
+
+            return new RegisterResult(RegisterStatus.EmailTaken); // local duplicate
         }
 
         var user = new UserProfile
@@ -64,10 +57,23 @@ public class UserService
             AccountStatus = true
         };
 
-        _logger.LogInformation("Creating User");
         _db.UserProfiles.Add(user);
         await _db.SaveChangesAsync();
-        return user;
+        return new RegisterResult(RegisterStatus.Created, user);
+    }
+
+    // Called AFTER OTP is verified
+    public async Task<UserProfile?> MergeAfterOtp(string email, string password, string name)
+    {
+        var existing = await _db.UserProfiles.FirstOrDefaultAsync(u => u.Email == email);
+        if (existing == null || existing.Provider == "local") return null;
+
+        existing.PasswordHash = HashPassword(password);
+        existing.Provider = "hybrid";
+        if (string.IsNullOrWhiteSpace(existing.Name)) existing.Name = name;
+
+        await _db.SaveChangesAsync();
+        return existing;
     }
 
     public async Task InitiatePasswordReset(string email)
@@ -80,4 +86,6 @@ public class UserService
         var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
         return Convert.ToBase64String(bytes);
     }
+
+
 }

@@ -87,6 +87,10 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<ImageService>();
 
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<OtpService>();
+builder.Services.AddScoped<IEmailService, ConsoleEmailService>(); // swap later
+
 // builder.Logging.ClearProviders();
 
 // builder.Logging.AddSimpleConsole(options =>

@@ -9,30 +9,19 @@ INSERT INTO Agents (Id, Rating, ListingsCount, Specialization, ReraRegistrationN
 VALUES 
 ('a1', 4.9, 45, 'Apartments, Villas & Plots, Agra and Noida', '', NULL),
 ('a2', 4.8, 32, 'Luxury Apartments, Villas & Plots, Noida', '', NULL);
-INSERT INTO "Agents"
-("Id", "Rating", "ListingsCount", "Specialization", "ReraRegistrationNumber", "OperatingLocation")
-VALUES 
-('a1', 4.9, 45, 'Apartments, Villas & Plots, Agra and Noida', '', NULL),
-('a2', 4.8, 32, 'Luxury Apartments, Villas & Plots, Noida', '', NULL);
 
--- Properties
-INSERT INTO "Properties"
-("Id", "Title", "Price", "Location", "City", "Beds", "Baths", "Sqft", "Type",
- "IsFeatured", "ExpresswayProximity", "IsReraRegistered",
- "ReraRegistrationNumber", "VastuOrientation", "CreatedAt")
+INSERT INTO Properties (Id, Title, Price, Location, City, Beds, Baths, Sqft, Type, IsFeatured, ExpresswayProximity, IsReraRegistered, ReraRegistrationNumber, VastuOrientation, CreatedAt)
 VALUES
-('1', 'Luxury 4BHK Penthouse', 45000000, 'Sector 150, Noida Expressway', 'Noida', 4, 4, 3200, 'Apartment', true, true, false, NULL, NULL, NOW()),
-('2', 'Modern Villa with Taj View', 28000000, 'Fatehabad Road, Agra', 'Agra', 3, 3, 2400, 'Villa', true, false, false, NULL, NULL, NOW()),
-('3', 'Premium Studio Apartment', 6500000, 'Knowledge Park III, Greater Noida', 'Greater Noida', 1, 1, 650, 'Apartment', false, true, false, NULL, NULL, NOW()),
-('4', 'Premium Apartment', 26500000, 'Knowledge Park III, Greater Noida', 'Greater Noida', 3, 2, 1650, 'Apartment', false, true, false, NULL, NULL, NOW()),
-('5', 'Residential Plot near Yamuna Expressway', 8500000, 'Sector 22D, Greater Noida', 'Greater Noida', 0, 0, 1800, 'Plot', true, true, false, NULL, NULL, NOW()),
-('6', '3BHK Family Home', 15000000, 'Shastri Puram, Agra', 'Agra', 3, 2, 1800, 'Apartment', false, false, false, NULL, NULL, NOW()),
-('8', 'Commercial Office Space', 12000000, 'Sector 62, Noida', 'Noida', 0, 2, 1200, 'Commercial', false, false, false, NULL, NULL, NOW());
+('1', 'Luxury 4BHK Penthouse', 45000000, 'Sector 150, Noida Expressway', 'Noida', 4, 4, 3200, 'Apartment', 1, 1, 0, NULL, NULL, GETUTCDATE()),
+('2', 'Modern Villa with Taj View', 28000000, 'Fatehabad Road, Agra', 'Agra', 3, 3, 2400, 'Villa', 1, 0, 0, NULL, NULL, GETUTCDATE()),
+('3', 'Premium Studio Apartment', 6500000, 'Knowledge Park III, Greater Noida', 'Greater Noida', 1, 1, 650, 'Apartment', 0, 1, 0, NULL, NULL, GETUTCDATE()),
+('4', 'Premium Apartment', 26500000, 'Knowledge Park III, Greater Noida', 'Greater Noida', 3, 2, 1650, 'Apartment', 0, 1, 0, NULL, NULL, GETUTCDATE()),
+('5', 'Residential Plot near Yamuna Expressway', 8500000, 'Sector 22D, Greater Noida', 'Greater Noida', 0, 0, 1800, 'Plot', 1, 1, 0, NULL, NULL, GETUTCDATE()),
+('6', '3BHK Family Home', 15000000, 'Shastri Puram, Agra', 'Agra', 3, 2, 1800, 'Apartment', 0, 0, 0, NULL, NULL, GETUTCDATE()),
+('8', 'Commercial Office Space', 12000000, 'Sector 62, Noida', 'Noida', 0, 2, 1200, 'Commercial', 0, 0, 0, NULL, NULL, GETUTCDATE());
 
--- Property Images
-INSERT INTO "PropertyImages"
-("Url", "Order", "PropertyId")
-VALUES
+INSERT INTO PropertyImages (Url, [Order], PropertyId) VALUES
+-- Property 1
 ('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80', 0, '1'),
 ('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80', 1, '1'),
 ('https://images.unsplash.com/photo-1523217582562-09d0def993a6?auto=format&fit=crop&w=800&q=80', 2, '1'),
@@ -64,19 +53,19 @@ VALUES
 -- Property 8
 ('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80', 0, '8');
 
--- Property Agents
-INSERT INTO "PropertyAgents"
-("PropertyId", "AgentId")
-VALUES
-('1', 'a2');
-
-
 INSERT INTO PropertyAgents (PropertyId, AgentId)
 VALUES ('1', 'a2');
 
 
 
 -- PostGresDB:===========
+
+-- User Profiles
+INSERT INTO "UserProfiles"
+("Id", "Name", "Email", "Phone", "PasswordHash", "UserPhoto", "Provider", "AccountStatus", "UserType")
+VALUES 
+('a1', 'Sunny Paul', '', '975-959-8991', NULL, 'sunny_paul.jpg', 'local', true, 'agent'),
+('a2', 'Priya Verma', '', '', NULL, 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80', 'local', true, 'agent');
 
 -- Agents
 INSERT INTO "Agents"
@@ -139,6 +128,8 @@ INSERT INTO "PropertyAgents"
 ("PropertyId", "AgentId")
 VALUES
 ('1', 'a2');
+
+
 
 select * from "Properties"
 select * from "PropertyImage"
