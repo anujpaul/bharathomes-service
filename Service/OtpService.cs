@@ -29,4 +29,23 @@ public class OtpService
         }
         return false;
     }
+
+    public async Task SendResetOtpAsync(string toEmail)
+    {
+        var otp = Random.Shared.Next(100000, 999999).ToString();
+        _cache.Set($"reset_otp:{toEmail}", otp, TimeSpan.FromMinutes(10));
+        await _email.SendAsync(toEmail, "Reset your password — BharatHomes",
+            $"Your password reset code is <b>{otp}</b>. It expires in 10 minutes.");
+    }
+
+    public bool ValidateResetOtp(string email, string otp)
+    {
+        var key = $"reset_otp:{email}";
+        if (_cache.TryGetValue(key, out string? stored) && stored == otp)
+        {
+            _cache.Remove(key);
+            return true;
+        }
+        return false;
+    }
 }

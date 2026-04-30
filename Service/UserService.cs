@@ -76,10 +76,22 @@ public class UserService
         return existing;
     }
 
-    public async Task InitiatePasswordReset(string email)
+    public async Task<bool> ResetPasswordWithOtp(string email, string newPassword)
     {
-        throw new NotImplementedException();
+        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null) return false;
+
+        user.PasswordHash = HashPassword(newPassword);
+
+        // If social user never had a password, make them hybrid
+        if (user.Provider != "local")
+            user.Provider = "hybrid";
+
+        await _db.SaveChangesAsync();
+        return true;
     }
+
+
 
     private static string HashPassword(string password)
     {

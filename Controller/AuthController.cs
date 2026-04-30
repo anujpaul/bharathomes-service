@@ -134,7 +134,7 @@ public class AuthController : ControllerBase
     {
         try
         {
-            await _userService.InitiatePasswordReset(request.Email);
+            //await _userService.InitiatePasswordReset(request.Email);
             return Ok(new {message = "If an account exists, a reset email has been sent"});
         }
         catch(Exception ex)
@@ -142,4 +142,35 @@ public class AuthController : ControllerBase
             return StatusCode(500, new {message = ex.Message});
         }
     }
+
+    [HttpPost("send-reset-otp")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SendResetOtp([FromBody] SendOtpRequest request)
+    {
+        var exists = await _db.UserProfiles.AnyAsync(u => u.Email == request.Email);
+        if (exists)
+            await _otpService.SendResetOtpAsync(request.Email);
+
+        // Always return OK — don't reveal if account exists
+        return Ok(new { message = "If an account exists, a reset code has been sent." });
+    }
+
+    [HttpPost("verify-reset")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyReset([FromBody] VerifyResetRequest request)
+    {
+        if (!_otpService.ValidateResetOtp(request.Email, request.Otp))
+            return Unauthorized(new { message = "Invalid or expired code" });
+
+        if (request.NewPassword.Length < 8)
+            return BadRequest(new { message = "Password must be at least 8 characters" });
+
+        var success = await _userService.ResetPasswordWithOtp(request.Email, request.NewPassword);
+        if (!success)
+            return BadRequest(new { message = "Account not found" });
+
+        return Ok(new { message = "Password reset successfully" });
+    }
+
+    public record VerifyResetRequest(string Email, string Otp, string NewPassword);
 }
