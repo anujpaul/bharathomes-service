@@ -5,8 +5,7 @@ public class Agent
 {
     [Key]
     [ForeignKey("UserProfile")]
-    public string Id { get; set; } = string.Empty; // same as UserProfile.Id
-
+    public string Id { get; set; } = string.Empty; 
     public double Rating { get; set; }
     public int ListingsCount { get; set; }
     public string Specialization { get; set; } = string.Empty;

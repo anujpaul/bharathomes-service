@@ -1,7 +1,7 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols;
@@ -10,12 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("SqlConnection");
-string cosmosAccount = builder.Configuration["CosmosAccount"]!;
-string cosmosDbName = builder.Configuration["CosmosDbName"]!;
-string cosmosContainerName = builder.Configuration["CosmosContainerName"]!;
-string cosmosKey = builder.Configuration["CosmosKey"]!;
-
+var SqlConnection = builder.Configuration.GetConnectionString("SqlConnection");
 
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
                      ?? Array.Empty<string>();
@@ -27,7 +22,8 @@ builder.Services.AddControllers()
         });
 
 builder.Services.AddDbContext<SqlDbContext>(options =>
-    options.UseSqlServer(connectionString));
+// options.UseSqlServer(SqlConnection));
+    options.UseNpgsql(SqlConnection));
 
 builder.Services.AddCors(options =>
 {
@@ -89,12 +85,6 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TokenService>();
-
-builder.Services.AddSingleton<Container>(sp =>
-    new CosmosClient(cosmosAccount, cosmosKey)
-        .GetContainer(cosmosDbName, cosmosContainerName));
-
-builder.Services.AddSingleton<CosmosDbService>();
 builder.Services.AddScoped<ImageService>();
 
 // builder.Logging.ClearProviders();
@@ -112,5 +102,19 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+if (app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        var principal = new { userId = "mock-id", userDetails = "dev@example.com", userRoles = new[] { "authenticated" }, identityProvider = "google" };
+        var json = JsonSerializer.Serialize(principal);
+        var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        context.Request.Headers["X-MS-CLIENT-PRINCIPAL"] = encoded;
+        context.Request.Headers["X-MS-CLIENT-PRINCIPAL-NAME"] = "dev@example.com";
+        context.Request.Headers["X-MS-CLIENT-PRINCIPAL-ID"] = "mock-id";
+        await next();
+    });
+}
 
 app.Run();

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@angular/cdk": "^21.2.9",
+    "swiper": "^12.1.4"
+  }
+}

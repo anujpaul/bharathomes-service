@@ -15,13 +15,12 @@ public class PropertyController : ControllerBase
 {
     private readonly ILogger<PropertyController> _logger;
     private readonly ImageService _imageService;
-    private readonly CosmosDbService _cosmosService;
+    
 
     private readonly SqlDbContext _db;
-    public PropertyController(ImageService imageService, CosmosDbService cosmosService, ILogger<PropertyController> logger, SqlDbContext db)
+    public PropertyController(ImageService imageService, ILogger<PropertyController> logger, SqlDbContext db)
     {
         _imageService = imageService;
-        _cosmosService = cosmosService;
         _logger = logger;
         _db = db;
     }

@@ -1,12 +1,13 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace bharathome_api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPropertyTables : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,21 +16,21 @@ namespace bharathome_api.Migrations
                 name: "Properties",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    City = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Beds = table.Column<int>(type: "int", nullable: false),
-                    Baths = table.Column<int>(type: "int", nullable: false),
-                    Sqft = table.Column<int>(type: "int", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsFeatured = table.Column<bool>(type: "bit", nullable: false),
-                    ExpresswayProximity = table.Column<bool>(type: "bit", nullable: false),
-                    IsReraRegistered = table.Column<bool>(type: "bit", nullable: false),
-                    ReraRegistrationNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    VastuOrientation = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric", nullable: false),
+                    Location = table.Column<string>(type: "text", nullable: false),
+                    City = table.Column<string>(type: "text", nullable: false),
+                    Beds = table.Column<int>(type: "integer", nullable: false),
+                    Baths = table.Column<int>(type: "integer", nullable: false),
+                    Sqft = table.Column<int>(type: "integer", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    IsFeatured = table.Column<bool>(type: "boolean", nullable: false),
+                    ExpresswayProximity = table.Column<bool>(type: "boolean", nullable: false),
+                    IsReraRegistered = table.Column<bool>(type: "boolean", nullable: false),
+                    ReraRegistrationNumber = table.Column<string>(type: "text", nullable: true),
+                    VastuOrientation = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -37,18 +38,32 @@ namespace bharathome_api.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TestItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TestItems", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "UserProfiles",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Image = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UserType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Provider = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AccountStatus = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    Phone = table.Column<string>(type: "text", nullable: false),
+                    UserPhoto = table.Column<string>(type: "text", nullable: false),
+                    UserType = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: true),
+                    Provider = table.Column<string>(type: "text", nullable: false),
+                    AccountStatus = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,10 +74,10 @@ namespace bharathome_api.Migrations
                 name: "PropertyAmenities",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    PropertyId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    PropertyId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -79,11 +94,11 @@ namespace bharathome_api.Migrations
                 name: "PropertyImages",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Url = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Order = table.Column<int>(type: "int", nullable: false),
-                    PropertyId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Url = table.Column<string>(type: "text", nullable: false),
+                    Order = table.Column<int>(type: "integer", nullable: false),
+                    PropertyId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -100,13 +115,12 @@ namespace bharathome_api.Migrations
                 name: "Agents",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Rating = table.Column<double>(type: "float", nullable: false),
-                    ListingsCount = table.Column<int>(type: "int", nullable: false),
-                    Specialization = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReraRegistrationNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    OperatingLocation = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Image = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Rating = table.Column<double>(type: "double precision", nullable: false),
+                    ListingsCount = table.Column<int>(type: "integer", nullable: false),
+                    Specialization = table.Column<string>(type: "text", nullable: false),
+                    ReraRegistrationNumber = table.Column<string>(type: "text", nullable: false),
+                    OperatingLocation = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -123,8 +137,8 @@ namespace bharathome_api.Migrations
                 name: "PropertyAgents",
                 columns: table => new
                 {
-                    PropertyId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    AgentId = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    PropertyId = table.Column<string>(type: "text", nullable: false),
+                    AgentId = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -170,6 +184,9 @@ namespace bharathome_api.Migrations
 
             migrationBuilder.DropTable(
                 name: "PropertyImages");
+
+            migrationBuilder.DropTable(
+                name: "TestItems");
 
             migrationBuilder.DropTable(
                 name: "Agents");
