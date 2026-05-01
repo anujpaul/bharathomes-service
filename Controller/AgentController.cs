@@ -36,13 +36,13 @@ public class AgentController : ControllerBase
             })
             .ToListAsync();
 
-        foreach (var agent in agents)
-        {
-            if (agent.Id == "a1")
-            {
-                agent.UserPhoto = _imageService.GetImage("Agents",agent.UserPhoto);
-            }
-        }
+        //foreach (var agent in agents)
+        //{
+        //    if (agent.Id == "a1")
+        //    {
+        //        agent.UserPhoto = _imageService.GetImage("Agents",agent.UserPhoto);
+        //    }
+        //}
 
         return Ok(agents);
     }
