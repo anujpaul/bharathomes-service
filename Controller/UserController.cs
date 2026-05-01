@@ -93,6 +93,7 @@ public class UserController : ControllerBase
         profile.Name = userProfile.Name;
         profile.Email = userProfile.Email;
         profile.Phone = userProfile.Phone;
+        profile.UserType = userProfile.UserType;
 
         await _db.SaveChangesAsync();
 
@@ -145,4 +146,29 @@ public class UserController : ControllerBase
 
         return Ok(new { userPhoto = photoUrl });
     }
+
+    [HttpPatch("type")]
+    [Authorize]
+    public async Task<IActionResult> UpdateUserType([FromBody] UpdateTypeRequest request)
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return Unauthorized();
+
+        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.Id == userId || u.Email == userId);
+        if (user == null) return NotFound();
+       
+
+        var allowed = new[] { "buyer", "seller", "agent", "hybrid" };
+        if (!allowed.Contains(request.UserType.ToLower()))
+            return BadRequest(new { message = "Invalid user type" });
+
+        user.UserType = request.UserType.ToLower();
+
+        _logger.LogInformation($"Updating User {userId}ile {user}");
+        await _db.SaveChangesAsync();
+
+        return Ok(new { userType = user.UserType });
+    }
+
+    public record UpdateTypeRequest(string UserType);
 }

@@ -9,7 +9,7 @@ public class UserProfile
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string UserPhoto { get; set; } = string.Empty;
-    public string UserType { get; set; } = string.Empty; // "agent", "buyer", "seller", "admin"
+    public string UserType { get; set; } = string.Empty; // "agent", "buyer", "seller", "admin" "paid-seller", "paid-buyer"
     public string? PasswordHash { get; set; }
     public string Provider { get; set; } = string.Empty;
     public bool AccountStatus { get; set; }
