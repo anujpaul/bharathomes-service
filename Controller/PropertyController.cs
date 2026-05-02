@@ -121,12 +121,54 @@ public class PropertyController : ControllerBase
         await _db.SaveChangesAsync();
         return Ok(property);
     }
-    
+
     // [HttpPost("createUser")]
     // public async Task<IActionResult> CreateUserAsync([FromBody] UserProfile user)
     // {
     //     _logger.LogInformation($"User called : {System.Text.Json.JsonSerializer.Serialize(user)}");
     //     return Ok(await _cosmosService.CreateItemAsync<UserProfile>(user));
     // }
+    [HttpPost("{id}/images")]
+    [Authorize]
+    public async Task<IActionResult> UploadImage(string id, IFormFile file)
+    {
+        var property = await _db.Properties.FindAsync(id);
+        if (property == null) return NotFound(new { message = "Property not found" });
 
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file provided" });
+
+        var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
+        if (!allowedTypes.Contains(file.ContentType))
+            return BadRequest(new { message = "Only JPEG, PNG and WebP allowed" });
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest(new { message = "Image must be under 10MB" });
+
+        var ext = Path.GetExtension(file.FileName);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+
+        using var stream = file.OpenReadStream();
+        var url = await _imageService.UploadImageAsync(stream, $"Properties/{id}", fileName, file.ContentType);
+
+        var nextOrder = property.Images?.Count ?? 0;
+        var image = new PropertyImage { Url = url, Order = nextOrder, PropertyId = id };
+        _db.PropertyImages.Add(image);
+        await _db.SaveChangesAsync();
+
+        return Ok(new { url, id = image.Id, order = image.Order });
+    }
+
+    [HttpDelete("{id}/images/{imageId}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteImage(string id, int imageId)
+    {
+        var image = await _db.PropertyImages
+            .FirstOrDefaultAsync(i => i.Id == imageId && i.PropertyId == id);
+        if (image == null) return NotFound();
+
+        _db.PropertyImages.Remove(image);
+        await _db.SaveChangesAsync();
+        return Ok();
+    }
 }
