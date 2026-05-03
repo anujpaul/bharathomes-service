@@ -44,7 +44,7 @@ public class PropertyController : ControllerBase
                 p.Type,
                 p.IsFeatured,
                 p.ExpresswayProximity,
-                Images = p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(),
+                Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
                 Amenities = p.Amenities.Select(a => a.Name).ToList(),
             })
             .ToListAsync();
@@ -77,7 +77,7 @@ public class PropertyController : ControllerBase
         p.ReraRegistrationNumber,
         p.VastuOrientation,
         p.CreatedAt,
-        Images = p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(),
+        Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
         Amenities = p.Amenities.Select(a => a.Name).ToList(),
         Agents = p.PropertyAgents.Select(pa => new
         {
@@ -85,6 +85,7 @@ public class PropertyController : ControllerBase
             pa.Agent.UserProfile.Name,
             pa.Agent.UserProfile.Email,
             pa.Agent.UserProfile.Phone,
+            pa.Agent.UserProfile.UserPhoto,
             pa.Agent.Rating,
             pa.Agent.ListingsCount,
             pa.Agent.Specialization
@@ -152,11 +153,11 @@ public class PropertyController : ControllerBase
         var url = await _imageService.UploadImageAsync(stream, $"Properties/{id}", fileName, file.ContentType);
 
         var nextOrder = property.Images?.Count ?? 0;
-        var image = new PropertyImage { Url = url, Order = nextOrder, PropertyId = id };
+        var image = new PropertyImage { Url = url, SortOrder = nextOrder, PropertyId = id };
         _db.PropertyImages.Add(image);
         await _db.SaveChangesAsync();
 
-        return Ok(new { url, id = image.Id, order = image.Order });
+        return Ok(new { url, id = image.Id, order = image.SortOrder });
     }
 
     [HttpDelete("{id}/images/{imageId}")]

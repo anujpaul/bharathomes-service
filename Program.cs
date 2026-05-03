@@ -23,7 +23,8 @@ builder.Services.AddControllers()
 
 builder.Services.AddDbContext<SqlDbContext>(options =>
 // options.UseSqlServer(SqlConnection));
-    options.UseNpgsql(SqlConnection));
+    options.UseNpgsql(SqlConnection)
+       .UseSnakeCaseNamingConvention());
 
 builder.Services.AddCors(options =>
 {
