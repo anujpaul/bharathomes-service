@@ -11,7 +11,7 @@ public class UserProfile
     public string UserPhoto { get; set; } = string.Empty;
     public string UserType { get; set; } = string.Empty; // "agent", "buyer", "seller", "admin" "paid-seller", "paid-buyer"
     public string? PasswordHash { get; set; }
-    public int ProperttiesListed { get; set; }
+    public int PropertiesListed { get; set; }
     public string Provider { get; set; } = string.Empty;
     public bool AccountStatus { get; set; }
     [JsonIgnore]

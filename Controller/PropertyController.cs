@@ -160,16 +160,53 @@ public class PropertyController : ControllerBase
         return Ok(new { url, id = image.Id, order = image.SortOrder });
     }
 
-    [HttpDelete("{id}/images/{imageId}")]
+    [HttpDelete("{id}/images")]
     [Authorize]
-    public async Task<IActionResult> DeleteImage(string id, int imageId)
+    public async Task<IActionResult> DeleteImage([FromBody] DeleteImageRequest request, string id)
     {
+        _logger.LogInformation($"Url = {request.Url}, Id: {id}===========================================================================");
+
         var image = await _db.PropertyImages
-            .FirstOrDefaultAsync(i => i.Id == imageId && i.PropertyId == id);
+            .FirstOrDefaultAsync(i => i.Url == request.Url && i.PropertyId == id);
         if (image == null) return NotFound();
 
         _db.PropertyImages.Remove(image);
         await _db.SaveChangesAsync();
         return Ok();
     }
+
+    [HttpPatch("{id}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProperty(string id, [FromBody] Property updatedProperty)
+    {
+
+        _logger.LogInformation($"Title: {updatedProperty.Id}, Price: {updatedProperty.Price} Title: {updatedProperty.Title}======================================");
+
+       var property = await _db.Properties.FindAsync(id);
+        if (property == null) return NotFound(new { message = "Property not found" });
+        property.Title = updatedProperty.Title;
+        property.Price = updatedProperty.Price;
+        property.Location = updatedProperty.Location;
+        property.City = updatedProperty.City;
+        property.Beds = updatedProperty.Beds;
+        property.Baths = updatedProperty.Baths;
+        property.Sqft = updatedProperty.Sqft;
+        property.Type = updatedProperty.Type;
+        property.IsFeatured = updatedProperty.IsFeatured;
+        property.ExpresswayProximity = updatedProperty.ExpresswayProximity;
+        property.IsReraRegistered = updatedProperty.IsReraRegistered;
+        property.ReraRegistrationNumber = updatedProperty.ReraRegistrationNumber;
+        property.VastuOrientation = updatedProperty.VastuOrientation;
+        await _db.SaveChangesAsync();
+        return Ok(property);
+    }
+
+
+}
+
+
+
+public class DeleteImageRequest
+{
+    public string Url { get; set; } = string.Empty;
 }

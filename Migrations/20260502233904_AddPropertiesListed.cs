@@ -11,14 +11,14 @@ namespace bharathome_api.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(
-                name: "ProperttiesListed",
+                name: "PropertiesListed",
                 table: "UserProfiles",
                 type: "integer",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.AddColumn<int>(
-                name: "ProperttiesListed",
+                name: "PropertiesListed",
                 table: "Properties",
                 type: "integer",
                 nullable: false,
@@ -29,11 +29,11 @@ namespace bharathome_api.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ProperttiesListed",
+                name: "PropertiesListed",
                 table: "UserProfiles");
 
             migrationBuilder.DropColumn(
-                name: "ProperttiesListed",
+                name: "PropertiesListed",
                 table: "Properties");
         }
     }

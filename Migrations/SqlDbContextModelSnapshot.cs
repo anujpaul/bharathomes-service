@@ -82,7 +82,7 @@ namespace bharathome_api.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("ProperttiesListed")
+                    b.Property<int>("PropertiesListed")
                         .HasColumnType("integer");
 
                     b.Property<string>("ReraRegistrationNumber")
@@ -214,7 +214,7 @@ namespace bharathome_api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("ProperttiesListed")
+                    b.Property<int>("PropertiesListed")
                         .HasColumnType("integer");
 
                     b.Property<string>("Provider")
