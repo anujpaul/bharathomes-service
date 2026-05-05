@@ -17,9 +17,13 @@ public class Property
     public bool IsReraRegistered { get; set; }
     public string? ReraRegistrationNumber { get; set; }
     public string? VastuOrientation { get; set; }
+
+    public string ListerId { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     // Navigation properties (replaces List<string>)
     public List<PropertyImage> Images { get; set; } = new();
     public List<PropertyAmenity> Amenities { get; set; } = new();
     public List<PropertyAgent> PropertyAgents { get; set; } = new();
+
+
 }

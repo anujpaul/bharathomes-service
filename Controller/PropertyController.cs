@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using bharathome_api.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -112,15 +113,42 @@ public class PropertyController : ControllerBase
         return Ok(new { message = "Property deleted" });
     }
 
-    
 
-    [HttpPost("createProperty")]
-    public async Task<IActionResult> createPropertyAsync([FromBody] Property property)
+
+    [HttpPost("property")]
+    [Authorize]
+    public async Task<IActionResult> CreatePropertyAsync([FromBody] CreatePropertyDto dto)
     {
-        _logger.LogInformation($"Property called : {System.Text.Json.JsonSerializer.Serialize(property)}");
+        // ✅ Single async DB call to get all valid agent IDs at once
+        var validAgentIds = await _db.Agents
+            .Where(a => dto.AgentId.Contains(a.Id))
+            .Select(a => a.Id)
+            .ToListAsync();
+
+        var property = new Property
+        {
+            Id = Guid.NewGuid().ToString(),
+            Title = dto.Title,
+            Price = dto.Price,
+            Location = dto.Location,
+            City = dto.City,
+            Beds = dto.Beds,
+            Baths = dto.Baths,
+            Sqft = dto.Sqft,
+            Type = dto.Type,
+            IsFeatured = dto.IsFeatured,
+            ExpresswayProximity = dto.ExpresswayProximity,
+            ListerId = dto.ListerId,
+            Images = dto.Images.Select(url => new PropertyImage { Url = url }).ToList(),
+            Amenities = dto.Amenities.Select(a => new PropertyAmenity { Name = a }).ToList(),
+            PropertyAgents = validAgentIds
+                .Select(id => new PropertyAgent { AgentId = id })
+                .ToList(),
+        };
+
         _db.Properties.Add(property);
         await _db.SaveChangesAsync();
-        return Ok(property);
+        return Ok(new { property.Id });
     }
 
     // [HttpPost("createUser")]
@@ -133,6 +161,7 @@ public class PropertyController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UploadImage(string id, IFormFile file)
     {
+        _logger.LogInformation($"Image Id : {id}.==============================");
         var property = await _db.Properties.FindAsync(id);
         if (property == null) return NotFound(new { message = "Property not found" });
 
@@ -203,6 +232,7 @@ public class PropertyController : ControllerBase
 
 
 }
+
 
 
 
