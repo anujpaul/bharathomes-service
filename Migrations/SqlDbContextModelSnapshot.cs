@@ -245,10 +245,38 @@ namespace bharathome_api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("account_status");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_paid");
+
+                    b.Property<string>("KycDocumentUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("kyc_document_url");
+
+                    b.Property<string>("KycRejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("kyc_rejection_reason");
+
+                    b.Property<int>("KycStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("kyc_status");
+
+                    b.Property<DateTime?>("KycSubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("kyc_submitted_at");
+
+                    b.Property<DateTime?>("KycVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("kyc_verified_at");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -272,6 +300,10 @@ namespace bharathome_api.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("provider");
+
+                    b.Property<DateTime?>("SubscriptionExpiry")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("subscription_expiry");
 
                     b.Property<string>("UserPhoto")
                         .IsRequired()

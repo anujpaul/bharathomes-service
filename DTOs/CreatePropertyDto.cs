@@ -1,4 +1,4 @@
-﻿namespace bharathome_api.Model
+﻿namespace bharathome_api.DTOs
 {
     public class CreatePropertyDto
     {

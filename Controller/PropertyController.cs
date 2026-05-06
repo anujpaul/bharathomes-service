@@ -1,13 +1,14 @@
+using bharathome_api.DTOs;
+using bharathome_api.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using System.Net.Cache;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using bharathome_api.Model;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")] 
@@ -16,14 +17,17 @@ public class PropertyController : ControllerBase
 {
     private readonly ILogger<PropertyController> _logger;
     private readonly ImageService _imageService;
-    
+
+    private readonly IPropertyService _propertyService;
+
 
     private readonly SqlDbContext _db;
-    public PropertyController(ImageService imageService, ILogger<PropertyController> logger, SqlDbContext db)
+    public PropertyController(ImageService imageService, ILogger<PropertyController> logger, SqlDbContext db, IPropertyService propertyService)
     {
         _imageService = imageService;
         _logger = logger;
         _db = db;
+        _propertyService = propertyService;
     }
 
     [HttpGet]
@@ -119,37 +123,53 @@ public class PropertyController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreatePropertyAsync([FromBody] CreatePropertyDto dto)
     {
-        // ✅ Single async DB call to get all valid agent IDs at once
-        var validAgentIds = await _db.Agents
-            .Where(a => dto.AgentId.Contains(a.Id))
-            .Select(a => a.Id)
-            .ToListAsync();
 
-        var property = new Property
-        {
-            Id = Guid.NewGuid().ToString(),
-            Title = dto.Title,
-            Price = dto.Price,
-            Location = dto.Location,
-            City = dto.City,
-            Beds = dto.Beds,
-            Baths = dto.Baths,
-            Sqft = dto.Sqft,
-            Type = dto.Type,
-            IsFeatured = dto.IsFeatured,
-            ExpresswayProximity = dto.ExpresswayProximity,
-            ListerId = dto.ListerId,
-            Images = dto.Images.Select(url => new PropertyImage { Url = url }).ToList(),
-            Amenities = dto.Amenities.Select(a => new PropertyAmenity { Name = a }).ToList(),
-            PropertyAgents = validAgentIds
-                .Select(id => new PropertyAgent { AgentId = id })
-                .ToList(),
-        };
+        var listerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = await _db.UserProfiles.FindAsync(listerId);
+        if (listerId == null || user == null) return Unauthorized();
 
-        _db.Properties.Add(property);
-        await _db.SaveChangesAsync();
-        return Ok(new { property.Id });
+        if (user.KycStatus != KycStatus.Verified)
+            return BadRequest(new
+            {
+                code = "KYC_REQUIRED",
+                message = "Complete identity verification before listing a property."
+            });
+        var listingCount = await _db.Properties
+        .CountAsync(p => p.ListerId == listerId);
+
+        var limit = GetListingLimit(user);
+        if (listingCount >= limit)
+            return BadRequest(new
+            {
+                code = "LISTING_LIMIT_REACHED",
+                message = $"You have reached your limit of {limit} listings.",
+                upgradeRequired = !user.IsPaid
+            });
+        dto.ListerId = listerId;
+        var id = await _propertyService.CreatePropertyAsync(dto);
+        return Ok(new { id });
+
     }
+
+    private int GetListingLimit(UserProfile user)
+    {
+        // Paid users — unlimited
+        if (user.IsPaid && (user.SubscriptionExpiry == null || user.SubscriptionExpiry > DateTime.UtcNow))
+            return 200; // effectively unlimited
+
+        var role = user.UserType.ToLower();
+
+        // Free agents / developers / builders — 10 for first 90 days
+        if (role is "agent" or "developer" or "builder")
+        {
+            var daysSinceJoined = (DateTime.UtcNow - user.CreatedAt).TotalDays;
+            return daysSinceJoined <= 90 ? 10 : 0;  // 0 forces upgrade after trial
+        }
+
+        // Free owners — 2 max
+        return 2;
+    }
+
 
     // [HttpPost("createUser")]
     // public async Task<IActionResult> CreateUserAsync([FromBody] UserProfile user)
@@ -161,7 +181,6 @@ public class PropertyController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UploadImage(string id, IFormFile file)
     {
-        _logger.LogInformation($"Image Id : {id}.==============================");
         var property = await _db.Properties.FindAsync(id);
         if (property == null) return NotFound(new { message = "Property not found" });
 
@@ -193,7 +212,7 @@ public class PropertyController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteImage([FromBody] DeleteImageRequest request, string id)
     {
-        _logger.LogInformation($"Url = {request.Url}, Id: {id}===========================================================================");
+        _logger.LogInformation($"Url = {request.Url}, Id: {id}");
 
         var image = await _db.PropertyImages
             .FirstOrDefaultAsync(i => i.Url == request.Url && i.PropertyId == id);

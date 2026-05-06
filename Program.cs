@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using bharathome_api.Interfaces;
+using bharathome_api.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -92,6 +94,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<OtpService>();
 //builder.Services.AddScoped<IEmailService, ConsoleEmailService>(); // swap later
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IPropertyService, PropertyService>();
 
 // builder.Logging.ClearProviders();
 
