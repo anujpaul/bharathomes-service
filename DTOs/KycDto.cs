@@ -1,4 +1,6 @@
-﻿namespace bharathome_api.DTOs
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace bharathome_api.DTOs
 {
     public class PanKycDto
     {
@@ -7,13 +9,13 @@
     }
     public class KycSubmitDto
     {
-        public string Role { get; set; } = string.Empty;
-        public string Pan { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string? ReraNumber { get; set; }
-        public string? ReraState { get; set; }
-        public string? GstNumber { get; set; }
-        public string? CompanyName { get; set; }
+        [FromForm(Name = "role")] public string Role { get; set; } = string.Empty;
+        [FromForm(Name = "pan")] public string Pan { get; set; } = string.Empty;
+        [FromForm(Name = "name")] public string Name { get; set; } = string.Empty;
+        [FromForm(Name = "reraNumber")] public string? ReraNumber { get; set; }
+        [FromForm(Name = "reraState")] public string? ReraState { get; set; }
+        [FromForm(Name = "gstNumber")] public string? GstNumber { get; set; }
+        [FromForm(Name = "companyName")] public string? CompanyName { get; set; }
     }
 
     public class KycReviewDto

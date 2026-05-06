@@ -29,6 +29,11 @@ public class UserProfile
     [JsonIgnore]
     public Agent? Agent { get; set; }
 
+    public string? ReraState { get; set; }
+    public string? GstNumber { get; set; }
+    public string? CompanyName { get; set; }
+    public string? KycDocumentUrls { get; set; }  // comma-separated blob URLs
+
 }
 
 public enum KycStatus

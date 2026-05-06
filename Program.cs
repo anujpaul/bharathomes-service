@@ -89,12 +89,15 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<ImageService>();
+builder.Services.AddScoped<KycService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<OtpService>();
 //builder.Services.AddScoped<IEmailService, ConsoleEmailService>(); // swap later
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
+
 
 // builder.Logging.ClearProviders();
 
