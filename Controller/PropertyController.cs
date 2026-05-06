@@ -157,7 +157,7 @@ public class PropertyController : ControllerBase
         if (user.IsPaid && (user.SubscriptionExpiry == null || user.SubscriptionExpiry > DateTime.UtcNow))
             return 200; // effectively unlimited
 
-        var role = user.UserType.ToLower();
+        var role = user.UserRole.ToLower();
 
         // Free agents / developers / builders — 10 for first 90 days
         if (role is "agent" or "developer" or "builder")

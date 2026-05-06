@@ -93,7 +93,7 @@ public class UserController : ControllerBase
         profile.Name = userProfile.Name;
         profile.Email = userProfile.Email;
         profile.Phone = userProfile.Phone;
-        profile.UserType = userProfile.UserType;
+        profile.UserRole = userProfile.UserRole;
 
         await _db.SaveChangesAsync();
 
@@ -162,12 +162,12 @@ public class UserController : ControllerBase
         if (!allowed.Contains(request.UserType.ToLower()))
             return BadRequest(new { message = "Invalid user type" });
 
-        user.UserType = request.UserType.ToLower();
+        user.UserRole = request.UserType.ToLower();
 
         _logger.LogInformation($"Updating User {userId}ile {user}");
         await _db.SaveChangesAsync();
 
-        return Ok(new { userType = user.UserType });
+        return Ok(new { userType = user.UserRole });
     }
 
     public record UpdateTypeRequest(string UserType);

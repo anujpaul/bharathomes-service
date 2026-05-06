@@ -53,7 +53,7 @@ namespace bharathome_api.Controller
             var user = await _db.UserProfiles.FindAsync(userId);
             if (user == null) return Unauthorized();
 
-            user.UserType = dto.Role;
+            user.UserRole = dto.Role;
             user.KycDocumentNumber = dto.Pan;  //MaskPan(dto.Pan);
             user.ReraNumber = dto.ReraNumber;
             //user.ReraState = dto.ReraState;
