@@ -1,4 +1,6 @@
+using bharathome_api.Model;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 public class SqlDbContext : DbContext
 {
@@ -13,6 +15,8 @@ public class SqlDbContext : DbContext
     public DbSet<PropertyAmenity> PropertyAmenities { get; set; }
     public DbSet<PropertyAgent> PropertyAgents { get; set; }
 
+    public DbSet<UserKyc> UserKycs { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // User -> Agent (one-to-one)
@@ -20,6 +24,12 @@ public class SqlDbContext : DbContext
             .HasOne(u => u.Agent)
             .WithOne(a => a.UserProfile)
             .HasForeignKey<Agent>(a => a.Id);
+
+        // 1-to-1 relationship
+        modelBuilder.Entity<UserKyc>()
+            .HasOne(k => k.UserProfile)
+            .WithOne(k => k.Kyc)
+            .HasForeignKey<UserKyc>(k => k.UserId);
 
         // PropertyAgent composite primary key
         modelBuilder.Entity<PropertyAgent>()

@@ -1,5 +1,6 @@
 using bharathome_api.DTOs;
 using bharathome_api.Interfaces;
+using bharathome_api.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -128,7 +129,7 @@ public class PropertyController : ControllerBase
         var user = await _db.UserProfiles.FindAsync(listerId);
         if (listerId == null || user == null) return Unauthorized();
 
-        if (user.KycStatus != KycStatus.Verified)
+        if (user.Kyc.KycStatus != KycStatus.Verified)
             return BadRequest(new
             {
                 code = "KYC_REQUIRED",

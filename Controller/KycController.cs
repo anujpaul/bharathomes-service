@@ -1,4 +1,5 @@
 ﻿using bharathome_api.DTOs;
+using bharathome_api.Model;
 using bharathome_api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -42,10 +43,10 @@ namespace bharathome_api.Controller
                     message = "Name on PAN does not match your profile name."
                 });
 
-            user.KycStatus = KycStatus.Verified;
-            user.KycVerifiedAt = DateTime.UtcNow;
-            user.KycDocumentType = "PAN";
-            user.KycDocumentNumber = dto.PanNumber; // store masked: ABCDE1234F → ABCDE***4F
+            user.Kyc.KycStatus = KycStatus.Verified;
+            user.Kyc.KycVerifiedAt = DateTime.UtcNow;
+            user.Kyc.KycDocumentType = "PAN";
+            user.Kyc.KycDocumentNumber = dto.PanNumber; // store masked: ABCDE1234F → ABCDE***4F
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "KYC verified successfully." });
@@ -77,14 +78,14 @@ namespace bharathome_api.Controller
             }
 
             user.UserRole = dto.Role;
-            user.KycDocumentNumber = MaskPan(dto.Pan);
+            user.Kyc.KycDocumentNumber = MaskPan(dto.Pan);
             user.ReraNumber = dto.ReraNumber;
             user.ReraState = dto.ReraState;
             user.GstNumber = dto.GstNumber;
             user.CompanyName = dto.CompanyName;
-            user.KycDocumentUrls = string.Join(",", docUrls);
-            user.KycStatus = KycStatus.Submitted;
-            user.KycSubmittedAt = DateTime.UtcNow;
+            user.Kyc.KycDocumentUrls = string.Join(",", docUrls);
+            user.Kyc.KycStatus = KycStatus.Submitted;
+            user.Kyc.KycSubmittedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
             return Ok(new { message = "KYC submitted. We'll verify within 1-2 business days." });
@@ -103,9 +104,9 @@ namespace bharathome_api.Controller
 
             return Ok(new
             {
-                status = user.KycStatus.ToString().ToLower(),
+                status = user.Kyc.KycStatus.ToString().ToLower(),
                 email = user.Email,
-                rejectionReason = user.KycRejectionReason
+                rejectionReason = user.Kyc.KycRejectionReason
             });
         }
     }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace bharathome_api.Migrations
 {
     [DbContext(typeof(SqlDbContext))]
-    partial class SqlDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260507002707_KycComponenets")]
+    partial class KycComponenets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -266,6 +269,34 @@ namespace bharathome_api.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_paid");
 
+                    b.Property<string>("KycDocumentNumber")
+                        .HasColumnType("text")
+                        .HasColumnName("kyc_document_number");
+
+                    b.Property<string>("KycDocumentType")
+                        .HasColumnType("text")
+                        .HasColumnName("kyc_document_type");
+
+                    b.Property<string>("KycDocumentUrls")
+                        .HasColumnType("text")
+                        .HasColumnName("kyc_document_urls");
+
+                    b.Property<string>("KycRejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("kyc_rejection_reason");
+
+                    b.Property<int>("KycStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("kyc_status");
+
+                    b.Property<DateTime?>("KycSubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("kyc_submitted_at");
+
+                    b.Property<DateTime?>("KycVerifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("kyc_verified_at");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -315,46 +346,6 @@ namespace bharathome_api.Migrations
                         .HasName("pk_user_profiles");
 
                     b.ToTable("user_profiles", (string)null);
-                });
-
-            modelBuilder.Entity("bharathome_api.Model.UserKyc", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("text")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("KycDocumentNumber")
-                        .HasColumnType("text")
-                        .HasColumnName("kyc_document_number");
-
-                    b.Property<string>("KycDocumentType")
-                        .HasColumnType("text")
-                        .HasColumnName("kyc_document_type");
-
-                    b.Property<string>("KycDocumentUrls")
-                        .HasColumnType("text")
-                        .HasColumnName("kyc_document_urls");
-
-                    b.Property<string>("KycRejectionReason")
-                        .HasColumnType("text")
-                        .HasColumnName("kyc_rejection_reason");
-
-                    b.Property<int>("KycStatus")
-                        .HasColumnType("integer")
-                        .HasColumnName("kyc_status");
-
-                    b.Property<DateTime?>("KycSubmittedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("kyc_submitted_at");
-
-                    b.Property<DateTime?>("KycVerifiedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("kyc_verified_at");
-
-                    b.HasKey("UserId")
-                        .HasName("pk_user_kycs");
-
-                    b.ToTable("user_kycs", (string)null);
                 });
 
             modelBuilder.Entity("Agent", b =>
@@ -414,18 +405,6 @@ namespace bharathome_api.Migrations
                     b.Navigation("Property");
                 });
 
-            modelBuilder.Entity("bharathome_api.Model.UserKyc", b =>
-                {
-                    b.HasOne("UserProfile", "UserProfile")
-                        .WithOne("Kyc")
-                        .HasForeignKey("bharathome_api.Model.UserKyc", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_user_kycs_user_profiles_user_id");
-
-                    b.Navigation("UserProfile");
-                });
-
             modelBuilder.Entity("Property", b =>
                 {
                     b.Navigation("Amenities");
@@ -438,8 +417,6 @@ namespace bharathome_api.Migrations
             modelBuilder.Entity("UserProfile", b =>
                 {
                     b.Navigation("Agent");
-
-                    b.Navigation("Kyc");
                 });
 #pragma warning restore 612, 618
         }
