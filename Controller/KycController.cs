@@ -4,6 +4,7 @@ using bharathome_api.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace bharathome_api.Controller
@@ -43,10 +44,15 @@ namespace bharathome_api.Controller
                     message = "Name on PAN does not match your profile name."
                 });
 
-            user.Kyc.KycStatus = KycStatus.Verified;
-            user.Kyc.KycVerifiedAt = DateTime.UtcNow;
-            user.Kyc.KycDocumentType = "PAN";
-            user.Kyc.KycDocumentNumber = dto.PanNumber; // store masked: ABCDE1234F → ABCDE***4F
+            if (user.Kyc == null)
+            {
+                user.Kyc = new UserKyc();
+            }
+
+            user.Kyc.Status = KycStatus.Verified;
+            user.Kyc.VerifiedAt = DateTime.UtcNow;
+            user.Kyc.DocumentType = "PAN";
+            user.Kyc.DocumentNumber = dto.PanNumber; // store masked: ABCDE1234F → ABCDE***4F
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "KYC verified successfully." });
@@ -78,14 +84,14 @@ namespace bharathome_api.Controller
             }
 
             user.UserRole = dto.Role;
-            user.Kyc.KycDocumentNumber = MaskPan(dto.Pan);
+            user.Kyc.DocumentNumber = MaskPan(dto.Pan);
             user.ReraNumber = dto.ReraNumber;
             user.ReraState = dto.ReraState;
             user.GstNumber = dto.GstNumber;
             user.CompanyName = dto.CompanyName;
-            user.Kyc.KycDocumentUrls = string.Join(",", docUrls);
-            user.Kyc.KycStatus = KycStatus.Submitted;
-            user.Kyc.KycSubmittedAt = DateTime.UtcNow;
+            user.Kyc.DocumentUrls = string.Join(",", docUrls);
+            user.Kyc.Status = KycStatus.Submitted;
+            user.Kyc.SubmittedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
             return Ok(new { message = "KYC submitted. We'll verify within 1-2 business days." });
@@ -99,14 +105,27 @@ namespace bharathome_api.Controller
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Console.WriteLine($"User Id is {userId}");
-            var user = await _db.UserProfiles.FindAsync(userId);
-            if (user == null) return Unauthorized();
+            var kyc = await _db.UserKycs
+                    .FirstOrDefaultAsync(k => k.UserId == userId);
+
+
+            if (kyc == null) return Unauthorized();
+
+            if (kyc == null)
+            {
+                return Ok(new
+                {
+                    status = "pending",   //KycStatus.Pending,
+                    //email = user.Email,
+                    rejectionReason = "" //(string?)null
+                });
+            }
 
             return Ok(new
             {
-                status = user.Kyc.KycStatus.ToString().ToLower(),
-                email = user.Email,
-                rejectionReason = user.Kyc.KycRejectionReason
+                status = kyc.Status.ToString().ToLower(),
+                //email = user.Email,
+                rejectionReason = kyc.RejectionReason
             });
         }
     }

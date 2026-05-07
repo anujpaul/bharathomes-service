@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using bharathome_api.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +47,11 @@ public class UserController : ControllerBase
             return Unauthorized();
 
         var profile = await _db.UserProfiles
+            .Include(u => u.Kyc)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
+
+        if (profile == null)
+            return NotFound();
 
         if (provider != "local")
         {
@@ -71,11 +76,24 @@ public class UserController : ControllerBase
             }
         }
 
-        if (profile == null)
-            return NotFound();
+        var dto = new UserProfileDto
+        {
+            Id = profile.Id,
+            Name = profile.Name,
+            Email = profile.Email,
+            Phone = profile.Phone,
+            UserPhoto = profile.UserPhoto,
+            UserRole = profile.UserRole,
+            AccountStatus = profile.AccountStatus,
+            IsPaid = profile.IsPaid,
+            SubscriptionExpiry = profile.SubscriptionExpiry,
+            Provider = profile.Provider,
+            KycStatus = profile.Kyc != null? profile.Kyc.Status.ToString().ToLower():"pending"
+        };
+        
 
         profile.PasswordHash = null;
-        return Ok(profile);
+        return Ok(dto);
     }
 
     [HttpPut("profile")]

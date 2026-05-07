@@ -129,7 +129,7 @@ public class PropertyController : ControllerBase
         var user = await _db.UserProfiles.FindAsync(listerId);
         if (listerId == null || user == null) return Unauthorized();
 
-        if (user.Kyc.KycStatus != KycStatus.Verified)
+        if (user.Kyc.Status != KycStatus.Verified)
             return BadRequest(new
             {
                 code = "KYC_REQUIRED",
