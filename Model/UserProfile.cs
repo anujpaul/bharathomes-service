@@ -10,6 +10,14 @@ public class UserProfile
     public bool IsPaid { get; set; } = false;
 
     public DateTime? SubscriptionExpiry { get; set; }
+
+    // Active subscription metadata. These are the source of truth for which
+    // plan the user is on; PropertyController.GetListingLimit reads CurrentPlanTier
+    // to decide whether to apply the Basic (10) or Pro (200) cap.
+    // Both stay null while the user is on the free tier.
+    public string? CurrentPlanCode { get; set; }      // e.g. "pro_yearly"
+    public string? CurrentPlanTier { get; set; }      // "basic" | "pro"
+    public DateTime? SubscriptionStartedAt { get; set; }
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string UserPhoto { get; set; } = string.Empty;

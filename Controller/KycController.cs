@@ -48,7 +48,7 @@ namespace bharathome_api.Controller
 
             if (user.Kyc == null)
             {
-                user.Kyc = new UserKyc();
+                user.Kyc = new UserKyc { UserId = user.Id };
             }
 
             user.Kyc.Status = KycStatus.Verified;
@@ -65,24 +65,61 @@ namespace bharathome_api.Controller
         public async Task<IActionResult> Submit([FromForm] KycSubmitDto dto, [FromForm] List<IFormFile> documents)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _db.UserProfiles.FindAsync(userId);
+            
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            // IMPORTANT: include Kyc — FindAsync does NOT load navigation properties,
+            // and the rest of this method writes to user.Kyc.*
+            var user = await _db.UserProfiles
+                .Include(u => u.Kyc)
+                .FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return Unauthorized();
+
+            // Validate basic required text fields up-front so we don't waste time
+            // uploading files for a request that will fail anyway.
+            if (string.IsNullOrWhiteSpace(dto.Role))
+                return BadRequest(new { message = "Role is required." });
+            if (string.IsNullOrWhiteSpace(dto.Pan))
+                return BadRequest(new { message = "PAN is required." });
+
+            var role = dto.Role.ToLowerInvariant();
+            if (role is "agent" or "builder" or "developer" && string.IsNullOrWhiteSpace(dto.ReraNumber))
+                return BadRequest(new { message = "RERA number is required for this role." });
+            if (role is "builder" or "developer")
+            {
+                if (string.IsNullOrWhiteSpace(dto.GstNumber))
+                    return BadRequest(new { message = "GST number is required for this role." });
+                if (string.IsNullOrWhiteSpace(dto.CompanyName))
+                    return BadRequest(new { message = "Company name is required for this role." });
+            }
+            if (role != "owner" && (documents == null || documents.Count == 0))
+                return BadRequest(new { message = "Please upload at least one supporting document." });
 
             // Upload each document to blob storage
             var docUrls = new List<string>();
-            foreach (var doc in documents)
+            if (documents != null)
             {
-                var allowedTypes = new[] { "application/pdf", "image/jpeg", "image/jpg", "image/png" };
-                if (!allowedTypes.Contains(doc.ContentType))
-                    return BadRequest(new { message = $"File {doc.FileName} is not allowed. Use PDF, JPG or PNG." });
+                foreach (var doc in documents)
+                {
+                    var allowedTypes = new[] { "application/pdf", "image/jpeg", "image/jpg", "image/png" };
+                    if (!allowedTypes.Contains(doc.ContentType))
+                        return BadRequest(new { message = $"File {doc.FileName} is not allowed. Use PDF, JPG or PNG." });
 
-                if (doc.Length > 5 * 1024 * 1024)
-                    return BadRequest(new { message = $"File {doc.FileName} exceeds 5MB limit." });
+                    if (doc.Length > 5 * 1024 * 1024)
+                        return BadRequest(new { message = $"File {doc.FileName} exceeds 5MB limit." });
 
-                using var stream = doc.OpenReadStream();
-                var url = await _imageService.UploadImageAsync(
-                    stream, $"kyc/{userId}", doc.FileName, doc.ContentType);
-                docUrls.Add(url);
+                    using var stream = doc.OpenReadStream();
+                    var url = await _imageService.UploadImageAsync(
+                        stream, $"kyc/{userId}", doc.FileName, doc.ContentType);
+                    docUrls.Add(url);
+                }
+            }
+
+            // Make sure a Kyc row exists. Users may submit before ever calling /verify-pan.
+            if (user.Kyc == null)
+            {
+                user.Kyc = new UserKyc { UserId = user.Id };
+                _db.UserKycs.Add(user.Kyc);
             }
 
             user.UserRole = dto.Role;
@@ -91,7 +128,10 @@ namespace bharathome_api.Controller
             user.ReraState = dto.ReraState;
             user.GstNumber = dto.GstNumber;
             user.CompanyName = dto.CompanyName;
-            user.Kyc.DocumentUrls = string.Join(",", docUrls);
+            // Preserve previously uploaded docs if no new ones came through
+            user.Kyc.DocumentUrls = docUrls.Count > 0
+                ? string.Join(",", docUrls)
+                : user.Kyc.DocumentUrls;
             user.Kyc.Status = KycStatus.Submitted;
             user.Kyc.SubmittedAt = DateTime.UtcNow;
 
@@ -103,30 +143,29 @@ namespace bharathome_api.Controller
             pan.Length == 10 ? pan[..5] + "****" + pan[9] : pan;
 
         [HttpGet("status")]
+        [Authorize]
         public async Task<IActionResult> GetStatus()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Console.WriteLine($"User Id is {userId}");
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
             var kyc = await _db.UserKycs
                     .FirstOrDefaultAsync(k => k.UserId == userId);
 
-
-            if (kyc == null) return Unauthorized();
-
+            // No KYC row yet just means the user hasn't started — return "pending",
+            // not 401, otherwise the frontend redirects them out of the KYC page.
             if (kyc == null)
             {
                 return Ok(new
                 {
-                    status = "pending",   //KycStatus.Pending,
-                    //email = user.Email,
-                    rejectionReason = "" //(string?)null
+                    status = "pending",
+                    rejectionReason = (string?)null
                 });
             }
 
             return Ok(new
             {
                 status = kyc.Status.ToString().ToLower(),
-                //email = user.Email,
                 rejectionReason = kyc.RejectionReason
             });
         }

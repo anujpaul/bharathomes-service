@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 [ApiController]
-[Route("api/[controller]")] 
+[Route("api/[controller]")]
 
 public class PropertyController : ControllerBase
 {
@@ -103,7 +103,7 @@ public class PropertyController : ControllerBase
             return NotFound(new { message = "Property not found" });
         return Ok(property);
     }
-    
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePropertyAsync(string id)
     {
@@ -126,10 +126,16 @@ public class PropertyController : ControllerBase
     {
 
         var listerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var user = await _db.UserProfiles.FindAsync(listerId);
-        if (listerId == null || user == null) return Unauthorized();
+        if (listerId == null) return Unauthorized();
 
-        if (user.Kyc.Status != KycStatus.Verified)
+        // IMPORTANT: include Kyc — FindAsync does NOT load navigation properties,
+        // and we need user.Kyc.Status below.
+        var user = await _db.UserProfiles
+            .Include(u => u.Kyc)
+            .FirstOrDefaultAsync(u => u.Id == listerId);
+        if (user == null) return Unauthorized();
+
+        if (user.Kyc == null || user.Kyc.Status != KycStatus.Verified)
             return BadRequest(new
             {
                 code = "KYC_REQUIRED",
@@ -231,7 +237,7 @@ public class PropertyController : ControllerBase
 
         _logger.LogInformation($"Title: {updatedProperty.Id}, Price: {updatedProperty.Price} Title: {updatedProperty.Title}======================================");
 
-       var property = await _db.Properties.FindAsync(id);
+        var property = await _db.Properties.FindAsync(id);
         if (property == null) return NotFound(new { message = "Property not found" });
         property.Title = updatedProperty.Title;
         property.Price = updatedProperty.Price;
@@ -250,6 +256,12 @@ public class PropertyController : ControllerBase
         return Ok(property);
     }
 
+    [HttpPost("{propertyId}/rera-doc")]
+    public async Task<IActionResult> ReraDocument(string propertyId, IFormFile file)
+    {
+        Console.WriteLine("File name is :");
+        return Ok();
+    }
 
 }
 
