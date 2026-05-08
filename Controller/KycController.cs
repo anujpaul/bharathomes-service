@@ -30,7 +30,9 @@ namespace bharathome_api.Controller
         {
             Console.WriteLine($"Name is {dto.Name}, Pan: {dto.PanNumber}");
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _db.UserProfiles.FindAsync(userId);
+            var user = await _db.UserProfiles
+                .Include(u => u.Kyc)
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             var result = await _kycService.VerifyPanAsync(dto.PanNumber, user.Name);
 
