@@ -87,6 +87,9 @@ public class UserController : ControllerBase
             AccountStatus = profile.AccountStatus,
             IsPaid = profile.IsPaid,
             SubscriptionExpiry = profile.SubscriptionExpiry,
+            SubscriptionStartedAt = profile.SubscriptionStartedAt,
+            CurrentPlanCode = profile.CurrentPlanCode,
+            CurrentPlanTier = profile.CurrentPlanTier,
             Provider = profile.Provider,
             KycStatus = profile.Kyc != null? profile.Kyc.Status.ToString().ToLower():"pending"
         };

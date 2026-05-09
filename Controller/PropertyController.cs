@@ -160,9 +160,22 @@ public class PropertyController : ControllerBase
 
     private int GetListingLimit(UserProfile user)
     {
-        // Paid users — unlimited
-        if (user.IsPaid && (user.SubscriptionExpiry == null || user.SubscriptionExpiry > DateTime.UtcNow))
-            return 200; // effectively unlimited
+        // Active subscription? Apply the tier's limit.
+        var subscriptionActive = user.IsPaid &&
+            (user.SubscriptionExpiry == null || user.SubscriptionExpiry > DateTime.UtcNow);
+        if (subscriptionActive)
+        {
+            // Pro tier — effectively unlimited.
+            // Basic tier — 10 active listings.
+            // Default to Pro behavior for legacy paid users that pre-date the
+            // CurrentPlanTier column (they paid under the old single-tier flow).
+            return user.CurrentPlanTier?.ToLowerInvariant() switch
+            {
+                "basic" => 10,
+                "pro"   => 200,
+                _       => 200,
+            };
+        }
 
         var role = user.UserRole.ToLower();
 

@@ -49,14 +49,30 @@ namespace bharathome_api.Controller
             // Extend an existing subscription rather than reset it. If the user
             // is still within their paid window, add the new cycle on top.
             var now = DateTime.UtcNow;
-            var startFrom = (user.SubscriptionExpiry.HasValue && user.SubscriptionExpiry.Value > now)
-                ? user.SubscriptionExpiry.Value
-                : now;
+            var hadActiveSub = user.SubscriptionExpiry.HasValue && user.SubscriptionExpiry.Value > now;
+            var startFrom = hadActiveSub ? user.SubscriptionExpiry!.Value : now;
 
             user.IsPaid = true;
             user.SubscriptionExpiry = plan.Cycle == "yearly"
                 ? startFrom.AddYears(1)
                 : startFrom.AddMonths(1);
+
+            // Persist plan metadata so PropertyController can apply the right
+            // listing limit (Basic = 10, Pro = 200) and so the UI can show
+            // "You're on Pro Yearly". Keep the original SubscriptionStartedAt
+            // when the user is renewing/extending the same tier; refresh it
+            // when they switch tiers or buy after a lapsed subscription.
+            var switchingTier = user.CurrentPlanTier != plan.Tier;
+            if (!hadActiveSub || switchingTier || user.SubscriptionStartedAt == null)
+            {
+                user.SubscriptionStartedAt = now;
+            }
+            user.CurrentPlanCode = plan.Code;
+            user.CurrentPlanTier = plan.Tier;
+
+            // TODO(payments-history): once we wire up Razorpay/Stripe, also write
+            // a row to a Payments table here (planCode, amountInr, paidAt, gatewayId)
+            // for receipts, refunds and audit. Tracked separately from this DTO change.
 
             await _db.SaveChangesAsync();
 
