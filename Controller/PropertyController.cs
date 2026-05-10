@@ -230,6 +230,83 @@ public class PropertyController : ControllerBase
         return Ok(new { url, id = image.Id, order = image.SortOrder });
     }
 
+    [HttpPost("{id}/media")]
+    [Authorize]
+    public async Task<IActionResult> UploadMedia(string id, IFormFileCollection files)
+    {
+        var property = await _db.Properties.FindAsync(id);
+        if (property == null) return NotFound(new { message = "Property not found" });
+
+        if (files == null || files.Count == 0)
+            return BadRequest(new { message = "No files provided" });
+
+        var allowedImageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/webp" };
+        var allowedVideoTypes = new[] { "video/mp4", "video/webm", "video/ogg", "video/quicktime" };
+        const long maxImageSize = 10 * 1024 * 1024;      // 10 MB
+        const long maxVideoSize = 100 * 1024 * 1024;    // 100 MB (adjust as needed)
+
+        var uploadedUrls = new List<string>();
+        int currentOrder = property.Images?.Count ?? 0;  // store both images & videos in `Images` list
+
+        foreach (var file in files)
+        {
+            if (file.Length == 0) continue;
+
+            bool isImage = allowedImageTypes.Contains(file.ContentType);
+            bool isVideo = allowedVideoTypes.Contains(file.ContentType);
+            if (!isImage && !isVideo)
+                return BadRequest(new { message = $"File {file.FileName} has invalid type. Allowed: images (JPEG, PNG, WebP) or videos (MP4, WebM, OGG, MOV)." });
+
+            long maxSize = isImage ? maxImageSize : maxVideoSize;
+            if (file.Length > maxSize)
+                return BadRequest(new { message = $"File {file.FileName} exceeds {(isImage ? "10MB" : "100MB")} limit." });
+
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid()}{ext}";
+            var subFolder = isImage ? "Properties" : "Videos"; // optional: organise in different folders
+
+            using var stream = file.OpenReadStream();
+            var url = await _imageService.UploadImageAsync(stream, $"{subFolder}/{id}", fileName, file.ContentType);
+            // If your `_imageService` is generic, keep using it. If not, create a separate video upload service.
+
+            var media = new PropertyImage { Url = url, SortOrder = currentOrder++, PropertyId = id };
+            _db.PropertyImages.Add(media);
+            uploadedUrls.Add(url);
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(uploadedUrls); // returns string[] – matches frontend expectation
+    }
+
+    [HttpPatch("{id}/reorder-images")]
+    [Authorize]
+    public async Task<IActionResult> ReorderImages(string id, [FromBody] ReorderImagesRequest request)
+    {
+        var property = await _db.Properties.FindAsync(id);
+        if (property == null) return NotFound();
+
+        foreach (var img in request.Images)
+        {
+            var imageEntity = await _db.PropertyImages
+                .FirstOrDefaultAsync(i => i.Url == img.Url && i.PropertyId == id);
+            if (imageEntity != null)
+                imageEntity.SortOrder = img.SortOrder;
+        }
+        await _db.SaveChangesAsync();
+        return Ok();
+    }
+
+    public class ReorderImagesRequest
+    {
+        public List<ImageOrder> Images { get; set; }
+    }
+
+    public class ImageOrder
+    {
+        public string Url { get; set; }
+        public int SortOrder { get; set; }
+    }
+
     [HttpDelete("{id}/images")]
     [Authorize]
     public async Task<IActionResult> DeleteImage([FromBody] DeleteImageRequest request, string id)
