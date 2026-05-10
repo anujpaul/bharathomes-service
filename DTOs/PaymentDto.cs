@@ -24,9 +24,21 @@ namespace bharathome_api.DTOs
         public List<string> Features { get; set; } = new();
     }
 
+    /// <summary>
+    /// Submitted by the upgrade page when the user enters card details.
+    /// CardNumber is sent over HTTPS once for last4 + brand extraction
+    /// and is NEVER persisted. CVV is not part of this DTO — the frontend
+    /// asks for it (we still want users to feel like a normal checkout)
+    /// but we deliberately don't accept it server-side.
+    /// </summary>
     public class ConfirmPaymentRequest
     {
         public string PlanCode { get; set; } = string.Empty;
+
+        public string CardholderName { get; set; } = string.Empty;
+        public string CardNumber { get; set; } = string.Empty;     // not stored; only last4 + brand are kept
+        public int    CardExpiryMonth { get; set; }
+        public int    CardExpiryYear  { get; set; }
     }
 
     public class PaymentResultDto
@@ -34,6 +46,35 @@ namespace bharathome_api.DTOs
         public bool Success { get; set; }
         public string? Message { get; set; }
         public string? PlanCode { get; set; }
+        public string? RequestId { get; set; }
+        public string? Status { get; set; }                         // "pending" | "approved" | "rejected"
         public DateTime? SubscriptionExpiry { get; set; }
+    }
+
+    /// <summary>
+    /// View row for the admin's payment review queue.
+    /// </summary>
+    public class PaymentRequestDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string UserEmail { get; set; } = string.Empty;
+
+        public string PlanCode { get; set; } = string.Empty;
+        public string PlanTier { get; set; } = string.Empty;
+        public string PlanCycle { get; set; } = string.Empty;
+        public int    AmountInr { get; set; }
+
+        public string CardholderName { get; set; } = string.Empty;
+        public string CardLast4 { get; set; } = string.Empty;
+        public string CardBrand { get; set; } = string.Empty;
+        public int    CardExpiryMonth { get; set; }
+        public int    CardExpiryYear  { get; set; }
+
+        public string Status { get; set; } = string.Empty;
+        public DateTime SubmittedAt { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+        public string? RejectionReason { get; set; }
     }
 }

@@ -17,6 +17,8 @@ public class SqlDbContext : DbContext
 
     public DbSet<UserKyc> UserKycs { get; set; }
 
+    public DbSet<PaymentRequest> PaymentRequests { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // User -> Agent (one-to-one)
@@ -30,6 +32,13 @@ public class SqlDbContext : DbContext
             .HasOne(k => k.UserProfile)
             .WithOne(k => k.Kyc)
             .HasForeignKey<UserKyc>(k => k.UserId);
+
+        // PaymentRequest -> User (many-to-one). A user can submit multiple
+        // upgrade requests over time (resubmits after rejection, renewals).
+        modelBuilder.Entity<PaymentRequest>()
+            .HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId);
 
         // PropertyAgent composite primary key
         modelBuilder.Entity<PropertyAgent>()

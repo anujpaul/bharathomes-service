@@ -1,4 +1,5 @@
 using bharathome_api.DTOs;
+using bharathome_api.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,9 +8,18 @@ using System.Security.Claims;
 namespace bharathome_api.Controller
 {
     /// <summary>
-    /// MOCK payment endpoints. No real gateway is called — /confirm just flips
-    /// IsPaid + SubscriptionExpiry on the user. Replace the body of Confirm with
-    /// real Razorpay/Stripe verification when you're ready to take real payments.
+    /// Plan upgrade endpoints. The flow is:
+    ///   1. POST /api/payment/confirm with plan + card details
+    ///         → creates a PaymentRequest with status=Pending
+    ///         → DOES NOT activate the plan
+    ///   2. Admin reviews the request in the admin app and either
+    ///      approves (which then flips IsPaid + sets SubscriptionExpiry)
+    ///      or rejects with a reason.
+    ///
+    /// IMPORTANT: this is a mock. No real charge happens. The card number
+    /// is sent over HTTPS once for last4/brand extraction and is NEVER
+    /// persisted. CVV is not accepted at all (PCI forbids storage).
+    /// Replace with Razorpay/Stripe before taking real money.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
@@ -46,49 +56,123 @@ namespace bharathome_api.Controller
             var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null) return Unauthorized();
 
-            // Extend an existing subscription rather than reset it. If the user
-            // is still within their paid window, add the new cycle on top.
+            // ── Card validation ────────────────────────────────────────────
+            //
+            // We never store the full PAN; this is just a sanity gate so we
+            // don't queue obviously-bogus requests for the admin to wade
+            // through. Real charge validation happens at the gateway later.
+            if (string.IsNullOrWhiteSpace(req.CardholderName))
+                return BadRequest(new { code = "CARD_NAME", message = "Cardholder name is required." });
+
+            var digits = new string((req.CardNumber ?? "").Where(char.IsDigit).ToArray());
+            if (digits.Length < 12 || digits.Length > 19)
+                return BadRequest(new { code = "CARD_NUMBER", message = "Card number length looks wrong." });
+            if (!PassesLuhn(digits))
+                return BadRequest(new { code = "CARD_LUHN", message = "Card number didn't pass the checksum." });
+
+            if (req.CardExpiryMonth < 1 || req.CardExpiryMonth > 12)
+                return BadRequest(new { code = "CARD_EXPIRY", message = "Expiry month must be 1–12." });
+            // Expiry must be the end of the stated month or later.
             var now = DateTime.UtcNow;
-            var hadActiveSub = user.SubscriptionExpiry.HasValue && user.SubscriptionExpiry.Value > now;
-            var startFrom = hadActiveSub ? user.SubscriptionExpiry!.Value : now;
+            var expiryEnd = new DateTime(req.CardExpiryYear, req.CardExpiryMonth, 1)
+                .AddMonths(1).AddDays(-1);
+            if (expiryEnd < now.Date)
+                return BadRequest(new { code = "CARD_EXPIRY", message = "Card has expired." });
 
-            user.IsPaid = true;
-            user.SubscriptionExpiry = plan.Cycle == "yearly"
-                ? startFrom.AddYears(1)
-                : startFrom.AddMonths(1);
+            var brand = DetectBrand(digits);
+            var last4 = digits[^4..];
 
-            // Persist plan metadata so PropertyController can apply the right
-            // listing limit (Basic = 10, Pro = 200) and so the UI can show
-            // "You're on Pro Yearly". Keep the original SubscriptionStartedAt
-            // when the user is renewing/extending the same tier; refresh it
-            // when they switch tiers or buy after a lapsed subscription.
-            var switchingTier = user.CurrentPlanTier != plan.Tier;
-            if (!hadActiveSub || switchingTier || user.SubscriptionStartedAt == null)
+            // ── Create the pending request ─────────────────────────────────
+            //
+            // Snapshot the plan price/cycle/tier on the request itself so
+            // historical records survive future catalog edits.
+            var pending = new PaymentRequest
             {
-                user.SubscriptionStartedAt = now;
-            }
-            user.CurrentPlanCode = plan.Code;
-            user.CurrentPlanTier = plan.Tier;
-
-            // TODO(payments-history): once we wire up Razorpay/Stripe, also write
-            // a row to a Payments table here (planCode, amountInr, paidAt, gatewayId)
-            // for receipts, refunds and audit. Tracked separately from this DTO change.
-
+                UserId          = userId,
+                PlanCode        = plan.Code,
+                PlanTier        = plan.Tier,
+                PlanCycle       = plan.Cycle,
+                AmountInr       = plan.PriceInr,
+                CardholderName  = req.CardholderName.Trim(),
+                CardLast4       = last4,
+                CardBrand       = brand,
+                CardExpiryMonth = req.CardExpiryMonth,
+                CardExpiryYear  = req.CardExpiryYear,
+                Status          = PaymentRequestStatus.Pending,
+                SubmittedAt     = now,
+            };
+            _db.PaymentRequests.Add(pending);
             await _db.SaveChangesAsync();
 
             return Ok(new PaymentResultDto
             {
                 Success = true,
-                Message = $"Subscription activated. You're on {plan.Name}.",
+                Message = $"Payment received for {plan.Name}. An admin will activate your subscription within 24 hours.",
                 PlanCode = plan.Code,
-                SubscriptionExpiry = user.SubscriptionExpiry
+                RequestId = pending.Id,
+                Status = "pending"
             });
         }
 
+        // ── Helpers ──────────────────────────────────────────────────────
+
+        /// <summary>Standard Luhn (mod-10) checksum used to spot typos in card numbers.</summary>
+        private static bool PassesLuhn(string digits)
+        {
+            var sum = 0;
+            var alt = false;
+            for (var i = digits.Length - 1; i >= 0; i--)
+            {
+                var d = digits[i] - '0';
+                if (alt)
+                {
+                    d *= 2;
+                    if (d > 9) d -= 9;
+                }
+                sum += d;
+                alt = !alt;
+            }
+            return sum % 10 == 0;
+        }
+
+        /// <summary>
+        /// BIN-based brand detection. Mirrors what the frontend shows live,
+        /// but we re-derive on the server because the client is not trusted.
+        /// </summary>
+        private static string DetectBrand(string digits)
+        {
+            if (digits.Length == 0) return "unknown";
+            // Visa: starts with 4
+            if (digits[0] == '4') return "visa";
+            // Amex: 34 or 37
+            if (digits.Length >= 2)
+            {
+                var p2 = int.Parse(digits.Substring(0, 2));
+                if (p2 == 34 || p2 == 37) return "amex";
+                // Mastercard: 51-55, or 2221-2720 (handled below)
+                if (p2 >= 51 && p2 <= 55) return "mastercard";
+                // Diners: 36, 38, 30
+                if (p2 == 36 || p2 == 38 || p2 == 30) return "diners";
+                // Discover: 65 (also 6011 below)
+                if (p2 == 65) return "discover";
+                // RuPay: 60, 65 (overlaps Discover — Discover wins above), 81, 82
+                if (p2 == 60 || p2 == 81 || p2 == 82) return "rupay";
+            }
+            if (digits.Length >= 4)
+            {
+                var p4 = int.Parse(digits.Substring(0, 4));
+                if (p4 >= 2221 && p4 <= 2720) return "mastercard";
+                if (p4 == 6011) return "discover";
+            }
+            return "unknown";
+        }
+
         // ── Plan catalog ──────────────────────────────────────────────────
-        // Single source of truth. The frontend page mirrors these values for
-        // display, but the server is authoritative for what gets activated.
-        private static List<PlanDto> GetPlanCatalog() => new()
+        // Single source of truth. Internal helper now used both by GET /plans
+        // and by Confirm's snapshot-into-PaymentRequest path. Also exposed to
+        // the admin app via PaymentReviewService when activating an approved
+        // request (so the admin app doesn't have to mirror the catalog).
+        public static List<PlanDto> GetPlanCatalog() => new()
         {
             new PlanDto
             {
