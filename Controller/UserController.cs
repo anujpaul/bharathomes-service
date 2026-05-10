@@ -122,7 +122,7 @@ public class UserController : ControllerBase
         return Ok(profile);
     }
 
-    [HttpGet("profile/{id}")]
+    [HttpGet("{id}")]
     public async Task<IActionResult> GetProfileById(string id)
     {
         var profile = await _db.UserProfiles.FindAsync(id);

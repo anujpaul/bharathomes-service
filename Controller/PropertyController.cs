@@ -81,7 +81,9 @@ public class PropertyController : ControllerBase
         p.ExpresswayProximity,
         p.IsReraRegistered,
         p.ReraRegistrationNumber,
+        p.ReraDocumentUrl,
         p.VastuOrientation,
+        p.ListerId,
         p.CreatedAt,
         Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
         Amenities = p.Amenities.Select(a => a.Name).ToList(),
@@ -270,10 +272,51 @@ public class PropertyController : ControllerBase
     }
 
     [HttpPost("{propertyId}/rera-doc")]
-    public async Task<IActionResult> ReraDocument(string propertyId, IFormFile file)
+    [Authorize]
+    public async Task<IActionResult> UploadReraDocument(string propertyId, IFormFile file)
     {
-        Console.WriteLine("File name is :");
-        return Ok();
+        // Resolve the property (need the entity to write the URL back to it).
+        var property = await _db.Properties.FindAsync(propertyId);
+        if (property == null)
+            return NotFound(new { message = "Property not found" });
+
+        // Only the lister should be able to attach a RERA certificate.
+        // (Same trust model as UploadImage today; tighten if you want
+        // co-listing agents to upload too.)
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId) || property.ListerId != userId)
+            return Forbid();
+
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file provided" });
+
+        // RERA certificates are typically PDFs; accept common image formats too
+        // for users who only have a photo of the certificate.
+        var allowedTypes = new[]
+        {
+            "application/pdf",
+            "image/jpeg", "image/jpg", "image/png", "image/webp"
+        };
+        if (!allowedTypes.Contains(file.ContentType))
+            return BadRequest(new { message = "Only PDF, JPEG, PNG or WebP allowed" });
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest(new { message = "File must be under 5MB" });
+
+        // Filename keeps the original extension so the blob serves with the
+        // right content type via the URL when the user opens it later.
+        var ext = Path.GetExtension(file.FileName);
+        var fileName = $"{Guid.NewGuid()}{ext}";
+
+        using var stream = file.OpenReadStream();
+        var url = await _imageService.UploadImageAsync(
+            stream, $"Properties/{propertyId}/rera", fileName, file.ContentType);
+
+        // Persist the URL on the property so subsequent GETs can surface it.
+        property.ReraDocumentUrl = url;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { url });
     }
 
 }

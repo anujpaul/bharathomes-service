@@ -16,6 +16,11 @@ public class Property
     public bool ExpresswayProximity { get; set; }
     public bool IsReraRegistered { get; set; }
     public string? ReraRegistrationNumber { get; set; }
+    /// <summary>
+    /// Blob URL of the uploaded RERA certificate (PDF or image). Null until
+    /// the lister uploads one via POST /api/property/{propertyId}/rera-doc.
+    /// </summary>
+    public string? ReraDocumentUrl { get; set; }
     public string? VastuOrientation { get; set; }
     public string ListerId { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
