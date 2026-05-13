@@ -32,11 +32,48 @@ public class PropertyController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Properties()
+    public async Task<IActionResult> Properties(
+        [FromQuery] string? intent = null,
+        [FromQuery] string? type = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] string? city = null)
     {
-        _logger.LogInformation("Properties called");
-        // var properties = await _cosmosService.ReadItemsAsync<Property>();
-        var properties = await _db.Properties
+        _logger.LogInformation(
+            "Properties called: intent={Intent} type={Type} min={Min} max={Max} city={City}",
+            intent, type, minPrice, maxPrice, city);
+
+        // Build the query incrementally — every filter is optional, so each
+        // becomes a Where clause only when the caller supplied it. Intent
+        // and type/city use case-insensitive equality (Postgres is case-
+        // sensitive by default; ToLower keeps it predictable).
+        var query = _db.Properties.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(intent))
+        {
+            var normalized = intent.Trim().ToLowerInvariant();
+            query = query.Where(p => p.ListingIntent.ToLower() == normalized);
+        }
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            var normalized = type.Trim().ToLowerInvariant();
+            query = query.Where(p => p.Type.ToLower() == normalized);
+        }
+
+        if (minPrice.HasValue)
+            query = query.Where(p => p.Price >= minPrice.Value);
+
+        if (maxPrice.HasValue)
+            query = query.Where(p => p.Price <= maxPrice.Value);
+
+        if (!string.IsNullOrWhiteSpace(city))
+        {
+            var normalized = city.Trim().ToLowerInvariant();
+            query = query.Where(p => p.City.ToLower() == normalized);
+        }
+
+        var properties = await query
             .Select(p => new
             {
                 p.Id,
@@ -48,13 +85,13 @@ public class PropertyController : ControllerBase
                 p.Baths,
                 p.Sqft,
                 p.Type,
+                p.ListingIntent,
                 p.IsFeatured,
                 p.ExpresswayProximity,
                 Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
                 Amenities = p.Amenities.Select(a => a.Name).ToList(),
             })
             .ToListAsync();
-
 
         return Ok(properties);
     }

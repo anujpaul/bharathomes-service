@@ -22,6 +22,13 @@ public class Property
     /// </summary>
     public string? ReraDocumentUrl { get; set; }
     public string? VastuOrientation { get; set; }
+    /// <summary>
+    /// Whether this listing is for sale or for rent. Drives the navbar
+    /// Buy/Rent filtering on the listings page.
+    /// Values: "sell" | "rent". Defaults to "sell" so existing rows
+    /// pre-migration appear under Buy.
+    /// </summary>
+    public string ListingIntent { get; set; } = "sell";
     public string ListerId { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     // Navigation properties (replaces List<string>)

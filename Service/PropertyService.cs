@@ -33,6 +33,10 @@ namespace bharathome_api.Service
                 Type = dto.Type,
                 IsFeatured = dto.IsFeatured,
                 ExpresswayProximity = dto.ExpresswayProximity,
+                // Normalize to "sell"/"rent" — DTO defaults to "sell", but
+                // guard against "buy"/"sale" coming in from older clients.
+                ListingIntent = string.Equals(dto.ListingIntent, "rent", StringComparison.OrdinalIgnoreCase)
+                    ? "rent" : "sell",
                 ListerId = dto.ListerId,
                 Images = dto.Images.Select(url => new PropertyImage { Url = url }).ToList(),
                 Amenities = dto.Amenities.Select(a => new PropertyAmenity { Name = a }).ToList(),
