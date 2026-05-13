@@ -50,30 +50,43 @@ public class UserController : ControllerBase
             .Include(u => u.Kyc)
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
-        if (profile == null)
-            return NotFound();
-
-        if (provider != "local")
+        // First-time OAuth sign-in: there's no row in user_profiles yet
+        // because OAuth users don't go through /api/auth/register (which
+        // is the path that creates the row for local sign-ups). Create
+        // it now from the JWT claims so the user has a profile to attach
+        // KYC, listings, and a role to.
+        if (profile == null && provider != "local")
         {
-            if (profile == null)
+            profile = new UserProfile
             {
-                profile = new UserProfile
-                {
-                    Id = userId!,
-                    Name = userName ?? "Unknown",
-                    Email = userEmail ?? "Unknown",
-                    Provider = provider,
-                    AccountStatus = true
-                };
-                _db.UserProfiles.Add(profile);
-                await _db.SaveChangesAsync();
-            }
-            else
-            {
-                _logger.LogInformation("Updating easy auth to hybrid");
-                profile.Provider = "hybrid";
-                await _db.SaveChangesAsync();
-            }
+                Id = userId!,
+                Name = userName ?? "Unknown",
+                Email = userEmail!,
+                Provider = provider,
+                AccountStatus = true,
+                CreatedAt = DateTime.UtcNow,
+            };
+            _db.UserProfiles.Add(profile);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation(
+                "Auto-created profile for OAuth user {Email} via {Provider}",
+                userEmail, provider);
+        }
+        // Local user with no row would mean they never completed registration;
+        // returning 404 is the right answer.
+        else if (profile == null)
+        {
+            return NotFound();
+        }
+        // User registered locally and is now signing in via Google/Microsoft.
+        // Promote provider to "hybrid" so we know both paths are valid.
+        else if (provider != "local" && profile.Provider == "local")
+        {
+            _logger.LogInformation(
+                "Promoting {Email} from local to hybrid (signed in via {Provider})",
+                userEmail, provider);
+            profile.Provider = "hybrid";
+            await _db.SaveChangesAsync();
         }
 
         var dto = new UserProfileDto
