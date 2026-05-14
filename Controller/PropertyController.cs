@@ -121,7 +121,8 @@ public class PropertyController : ControllerBase
         p.ReraDocumentUrl,
         p.VastuOrientation,
         p.ListerId,
-        p.CreatedAt,
+        p.BuiltYear,
+        listedSince = (DateTime.UtcNow - p.CreatedAt).Days + " days",
         Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
         Amenities = p.Amenities.Select(a => a.Name).ToList(),
         Agents = p.PropertyAgents.Select(pa => new

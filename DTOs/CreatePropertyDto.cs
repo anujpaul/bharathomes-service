@@ -19,6 +19,8 @@
         public List<string> Amenities { get; set; } = new();
         public List<string> AgentId { get; set; } = new();    // matches TS agentId
 
+        public int BuiltYear { get; set; }
+
         public string ListerId { get; set; } = string.Empty;
     }
 }

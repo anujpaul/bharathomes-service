@@ -30,6 +30,8 @@ public class Property
     /// </summary>
     public string ListingIntent { get; set; } = "sell";
     public string ListerId { get; set; } = string.Empty;
+
+    public int BuiltYear { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     // Navigation properties (replaces List<string>)
     public List<PropertyImage> Images { get; set; } = new();

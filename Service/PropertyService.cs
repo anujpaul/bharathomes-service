@@ -38,6 +38,7 @@ namespace bharathome_api.Service
                 ListingIntent = string.Equals(dto.ListingIntent, "rent", StringComparison.OrdinalIgnoreCase)
                     ? "rent" : "sell",
                 ListerId = dto.ListerId,
+                BuiltYear = dto.BuiltYear,
                 Images = dto.Images.Select(url => new PropertyImage { Url = url }).ToList(),
                 Amenities = dto.Amenities.Select(a => new PropertyAmenity { Name = a }).ToList(),
                 PropertyAgents = validAgentIds
