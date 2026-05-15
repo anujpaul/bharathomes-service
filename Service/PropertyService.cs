@@ -36,9 +36,8 @@ namespace bharathome_api.Service
                 // Normalize to "sell"/"rent" — DTO defaults to "sell", but
                 // guard against "buy"/"sale" coming in from older clients.
                 ListingIntent = string.Equals(dto.ListingIntent, "rent", StringComparison.OrdinalIgnoreCase)
-                    ? "rent" : "sell",
+                    ? "Rent" : "Sell",
                 ListerId = dto.ListerId,
-                BuiltYear = dto.BuiltYear,
                 Images = dto.Images.Select(url => new PropertyImage { Url = url }).ToList(),
                 Amenities = dto.Amenities.Select(a => new PropertyAmenity { Name = a }).ToList(),
                 PropertyAgents = validAgentIds

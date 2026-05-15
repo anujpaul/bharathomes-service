@@ -52,7 +52,7 @@ public class PropertyController : ControllerBase
         if (!string.IsNullOrWhiteSpace(intent))
         {
             var normalized = intent.Trim().ToLowerInvariant();
-            query = query.Where(p => p.ListingIntent.ToLower() == normalized);
+            query = query.Where(p => p.ListingIntent == normalized);
         }
 
         if (!string.IsNullOrWhiteSpace(type))
@@ -93,6 +93,8 @@ public class PropertyController : ControllerBase
             })
             .ToListAsync();
 
+            
+
         return Ok(properties);
     }
 
@@ -122,7 +124,8 @@ public class PropertyController : ControllerBase
         p.VastuOrientation,
         p.ListerId,
         p.BuiltYear,
-        listedSince = (DateTime.UtcNow - p.CreatedAt).Days + " days",
+        p.ListingIntent,
+        p.CreatedAt,
         Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
         Amenities = p.Amenities.Select(a => a.Name).ToList(),
         Agents = p.PropertyAgents.Select(pa => new
@@ -141,7 +144,39 @@ public class PropertyController : ControllerBase
 
         if (property == null)
             return NotFound(new { message = "Property not found" });
-        return Ok(property);
+
+        var result = new
+    {
+        property.Id,
+        property.Title,
+        property.Price,
+        property.Location,
+        property.City,
+        property.Beds,
+        property.Baths,
+        property.Sqft,
+        property.Type,
+        property.IsFeatured,
+        property.ExpresswayProximity,
+        property.IsReraRegistered,
+        property.ReraRegistrationNumber,
+        property.ReraDocumentUrl,
+        property.VastuOrientation,
+        property.ListerId,
+        property.BuiltYear,
+        ListingIntent = property.ListingIntent switch
+        {
+            "sell" => "Buy",
+            "rent" => "Rent",
+             _ => char.ToUpper(property.ListingIntent[0]) + property.ListingIntent.Substring(1)
+        },
+        listedSince = (DateTime.UtcNow - property.CreatedAt).Days + " days",
+        property.Images,
+        property.Amenities,
+        property.Agents
+    };
+        
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
