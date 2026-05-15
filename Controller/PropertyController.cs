@@ -74,6 +74,8 @@ public class PropertyController : ControllerBase
         }
 
         var properties = await query
+            .OrderByDescending(p => p.IsFeatured) // True first
+            .ThenByDescending(p => p.CreatedAt)   // Newest first within each group
             .Select(p => new
             {
                 p.Id,
@@ -87,6 +89,7 @@ public class PropertyController : ControllerBase
                 p.Type,
                 p.ListingIntent,
                 p.IsFeatured,
+                listedSince = (DateTime.UtcNow - p.CreatedAt).Days + " days",
                 p.ExpresswayProximity,
                 Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
                 Amenities = p.Amenities.Select(a => a.Name).ToList(),
@@ -190,7 +193,11 @@ public class PropertyController : ControllerBase
         _db.Properties.Remove(property);
         await _db.SaveChangesAsync();
 
-        return Ok(new { message = "Property deleted" });
+        var resp = await _imageService.DeleteImageAsync($"Properties/{id}", null); // Pass null if your service doesn't require a filename for deletion
+
+        _logger.LogInformation($"Deleted property {id} and associated images: {resp}");
+        
+        return Ok(new { message = resp });
     }
 
 
