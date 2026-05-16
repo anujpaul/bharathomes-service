@@ -193,7 +193,7 @@ public class PropertyController : ControllerBase
         _db.Properties.Remove(property);
         await _db.SaveChangesAsync();
 
-        var resp = await _imageService.DeleteImageAsync($"Properties/{id}", null); // Pass null if your service doesn't require a filename for deletion
+        var resp = await _imageService.DeletePropertyAsync($"Properties/{id}"); // Pass null if your service doesn't require a filename for deletion
 
         _logger.LogInformation($"Deleted property {id} and associated images: {resp}");
         

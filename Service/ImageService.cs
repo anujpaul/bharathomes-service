@@ -40,18 +40,28 @@ public class ImageService
         return GetImage(folderName, fileName);
     }
 
-    public async Task<bool> DeleteImageAsync(string folderName, string fileName)
+    public async Task<bool> DeletePropertyAsync(string folderName)
     {
         string? connectionString = _config["ConnectionStrings:StorageConnection"];
         string? containerName = _config["StorageContainer"];
 
         var containerClient = new BlobContainerClient(connectionString, containerName);
-        var blobPath = $"images/{folderName}/{fileName}";
-        var blobClient = containerClient.GetBlobClient(blobPath);
 
-        var resp = await blobClient.DeleteIfExistsAsync();
+        string prefix = $"images/{folderName}/";
 
-        _logger.LogInformation($"Deleted image: {blobPath}");
-        return resp.Value;
+        await foreach (var blobItem in containerClient.GetBlobsAsync(
+            traits: BlobTraits.None,
+            states: BlobStates.None,
+            prefix: prefix,
+            cancellationToken: CancellationToken.None))
+        {
+            var blobClient = containerClient.GetBlobClient(blobItem.Name);
+
+            await blobClient.DeleteIfExistsAsync();
+
+            _logger.LogInformation($"Deleted blob: {blobItem.Name}");
+        }
+
+        return true;
     }
 }
