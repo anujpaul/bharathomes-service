@@ -98,6 +98,14 @@ builder.Services.AddScoped<OtpService>();
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 
+// AddHttpClient registers IGeocodingService AND a typed HttpClient for it,
+// so the framework handles socket exhaustion / connection pooling for us.
+// Nominatim is slow (often 500-1500ms) — give it a generous timeout.
+builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 
 // builder.Logging.ClearProviders();
 

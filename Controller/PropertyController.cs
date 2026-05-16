@@ -93,6 +93,8 @@ public class PropertyController : ControllerBase
                 p.ReraRegistrationNumber,
                 listedSince = (DateTime.UtcNow - p.CreatedAt).Days + " days",
                 p.ExpresswayProximity,
+                p.Latitude,
+                p.Longitude,
                 Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
                 Amenities = p.Amenities.Select(a => a.Name).ToList(),
             })
@@ -130,6 +132,8 @@ public class PropertyController : ControllerBase
         p.ListerId,
         p.BuiltYear,
         p.ListingIntent,
+        p.Latitude,
+        p.Longitude,
         p.CreatedAt,
         Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
         Amenities = p.Amenities.Select(a => a.Name).ToList(),

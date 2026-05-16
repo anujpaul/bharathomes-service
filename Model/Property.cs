@@ -29,6 +29,18 @@ public class Property
     /// pre-migration appear under Buy.
     /// </summary>
     public string ListingIntent { get; set; } = "sell";
+
+    /// <summary>
+    /// Geocoded coordinates. Populated by GeocodingService when the
+    /// property is created. Nullable because (1) the geocoder might
+    /// fail or be rate-limited, (2) rows created before this column
+    /// existed have no coords, and (3) some property types
+    /// (vacant plots without postal addresses) may genuinely not be
+    /// geocodable. The map UI renders nothing when either is null.
+    /// </summary>
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+
     public string ListerId { get; set; } = string.Empty;
 
     public int BuiltYear { get; set; }
