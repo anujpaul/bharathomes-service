@@ -89,6 +89,8 @@ public class PropertyController : ControllerBase
                 p.Type,
                 p.ListingIntent,
                 p.IsFeatured,
+                p.IsReraRegistered,
+                p.ReraRegistrationNumber,
                 listedSince = (DateTime.UtcNow - p.CreatedAt).Days + " days",
                 p.ExpresswayProximity,
                 Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
