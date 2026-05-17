@@ -166,6 +166,8 @@ public class PropertyController : ControllerBase
         property.Sqft,
         property.Type,
         property.IsFeatured,
+        property.Latitude,
+        property.Longitude,
         property.ExpresswayProximity,
         property.IsReraRegistered,
         property.ReraRegistrationNumber,

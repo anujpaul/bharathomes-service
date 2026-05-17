@@ -53,35 +53,47 @@ namespace bharathome_api.Service
                     .ToList(),
             };
 
+            // If the lister picked coords on the map, use those — they're
+            // more accurate than any geocode result. Otherwise we'll
+            // best-effort geocode the address fields after save.
+            if (dto.Latitude.HasValue && dto.Longitude.HasValue)
+            {
+                property.Latitude = dto.Latitude;
+                property.Longitude = dto.Longitude;
+            }
+
             _db.Properties.Add(property);
             await _db.SaveChangesAsync();
 
-            // Best-effort geocode AFTER save so a slow/flaky Nominatim
-            // call never blocks the property from being created. If it
-            // succeeds we persist the coords; if not the row stays with
-            // null lat/lng and the map UI just doesn't render for it.
-            try
+            // Server-side geocode fallback — only runs when the lister
+            // DIDN'T pin a location on the frontend map. Wrapped in
+            // try/catch so a flaky Nominatim call never blocks the
+            // property from being created; the row just stays at
+            // null lat/lng and the map UI degrades gracefully.
+            if (!property.Latitude.HasValue || !property.Longitude.HasValue)
             {
-                var coords = await _geocoder.GeocodeAsync(dto.Location, dto.City);
-                if (coords is var (lat, lon))
+                try
                 {
-                    property.Latitude = lat;
-                    property.Longitude = lon;
-                    await _db.SaveChangesAsync();
+                    var coords = await _geocoder.GeocodeAsync(dto.Location, dto.City);
+                    if (coords is var (lat, lon))
+                    {
+                        property.Latitude = lat;
+                        property.Longitude = lon;
+                        await _db.SaveChangesAsync();
+                    }
+                    else
+                    {
+                        _logger.LogInformation(
+                            "Property {Id} created without coords (geocode returned null)",
+                            property.Id);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    _logger.LogInformation(
-                        "Property {Id} created without coords (geocode returned null)",
+                    _logger.LogWarning(ex,
+                        "Geocode for property {Id} threw — leaving lat/lng null",
                         property.Id);
                 }
-            }
-            catch (Exception ex)
-            {
-                // Geocoder failures are non-fatal. Log and move on.
-                _logger.LogWarning(ex,
-                    "Geocode for property {Id} threw — leaving lat/lng null",
-                    property.Id);
             }
 
             return property.Id;
