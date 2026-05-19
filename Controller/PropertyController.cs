@@ -191,6 +191,7 @@ public class PropertyController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeletePropertyAsync(string id)
     {
         var property = await _db.Properties.FindAsync(id);
@@ -204,7 +205,7 @@ public class PropertyController : ControllerBase
         var resp = await _imageService.DeletePropertyAsync($"Properties/{id}"); // Pass null if your service doesn't require a filename for deletion
 
         _logger.LogInformation($"Deleted property {id} and associated images: {resp}");
-        
+
         return Ok(new { message = resp });
     }
 

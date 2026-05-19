@@ -1,6 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Crypto.Generators;
+using BCrypt.Net;
+
 
 public class UserService
 {
@@ -27,8 +30,12 @@ public class UserService
         if (user == null)
             return null;
 
-        var hash = HashPassword(password);
-        return hash == user.PasswordHash ? user : null;
+        // var hash = HashPassword(password);
+        // return hash == user.PasswordHash ? user : null;
+
+        return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash) ? user : null;
+
+        // return BCrypt.Net.BCrypt.ValidateAndReplacePassword(password, user.PasswordHash) ? user : null;
     }
 
     public async Task<RegisterResult> CreateLocalUser(string? email, string password, string name)
@@ -82,7 +89,7 @@ public class UserService
         if (user == null) return false;
 
         user.PasswordHash = HashPassword(newPassword);
-
+        user.ResetCount = 0;
         // If social user never had a password, make them hybrid
         if (user.Provider != "local")
             user.Provider = "hybrid";
@@ -95,8 +102,9 @@ public class UserService
 
     private static string HashPassword(string password)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(bytes);
+        // var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
+        // return Convert.ToBase64String(bytes);
+        return BCrypt.Net.BCrypt.HashPassword(password);
     }
 
 

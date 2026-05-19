@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Tls;
 using static UserService;
 
 [ApiController]
@@ -135,7 +136,7 @@ public class AuthController : ControllerBase
         try
         {
             //await _userService.InitiatePasswordReset(request.Email);
-            return Ok(new {message = "If an account exists, a reset email has been sent"});
+            return Ok(new { message = "If an account exists, a reset email has been sent" });
         }
         catch(Exception ex)
         {
@@ -147,12 +148,25 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> SendResetOtp([FromBody] SendOtpRequest request)
     {
-        var exists = await _db.UserProfiles.AnyAsync(u => u.Email == request.Email);
-        if (exists)
-            await _otpService.SendOtpAsync(request.Email);
+        var user = await _db.UserProfiles.FirstOrDefaultAsync(u => u.Email == request.Email);
 
-        // Always return OK — don't reveal if account exists
-        return Ok(new { message = "If an account exists, a reset code has been sent." });
+        if (user == null)
+            return Ok(new { message = "If an account exists, a reset code has been sent." });
+            
+        if (user.ResetCount < 6)
+        {
+            user.ResetCount++;
+            await _otpService.SendOtpAsync(request.Email);
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "If an account exists, a reset code has been sent." });
+        }
+        if (user.UserStatus == UserStatus.Active)
+        {
+            user.UserStatus = UserStatus.Suspended;
+            await _db.SaveChangesAsync();
+        }
+            
+        return Ok(new { message = "Please contact support." });
     }
 
     [HttpPost("verify-reset")]

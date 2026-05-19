@@ -8,7 +8,6 @@ public class UserProfile
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public bool IsPaid { get; set; } = false;
-
     public DateTime? SubscriptionExpiry { get; set; }
 
     // Active subscription metadata. These are the source of truth for which
@@ -24,7 +23,6 @@ public class UserProfile
     public string UserRole { get; set; } = string.Empty; // "agent", "buyer", "seller", "admin" "paid-seller", "paid-buyer"
     public string? PasswordHash { get; set; }
     public int PropertiesListed { get; set; }
-    
     public string Provider { get; set; } = string.Empty;
     public bool AccountStatus { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -32,11 +30,20 @@ public class UserProfile
     [JsonIgnore]
     public Agent? Agent { get; set; }
 
-    public string? ReraState { get; set; }
+    public UserStatus UserStatus { get; set; } = UserStatus.Active;
+    public string? ReraState
+    { get; set; }
     public string? GstNumber { get; set; }
     public string? CompanyName { get; set; }
-    
-
+    public int ResetCount { get; set; } = 0;
     public UserKyc? Kyc { get; set; }
 
+}
+
+public enum UserStatus
+{
+    Active,
+    Inactive,
+    Suspended,
+    Pending,
 }
