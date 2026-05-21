@@ -52,7 +52,7 @@ public class PropertyController : ControllerBase
         if (!string.IsNullOrWhiteSpace(intent))
         {
             var normalized = intent.Trim().ToLowerInvariant();
-            query = query.Where(p => p.ListingIntent == normalized);
+            query = query.Where(p => p.ListingIntent.ToLower() == normalized);
         }
 
         if (!string.IsNullOrWhiteSpace(type))
@@ -134,7 +134,7 @@ public class PropertyController : ControllerBase
         p.ListingIntent,
         p.Latitude,
         p.Longitude,
-        p.CreatedAt,
+        listedSince = (DateTime.UtcNow - p.CreatedAt).Days + " days",
         Images = p.Images.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList(),
         Amenities = p.Amenities.Select(a => a.Name).ToList(),
         Agents = p.PropertyAgents.Select(pa => new
@@ -154,40 +154,40 @@ public class PropertyController : ControllerBase
         if (property == null)
             return NotFound(new { message = "Property not found" });
 
-        var result = new
-    {
-        property.Id,
-        property.Title,
-        property.Price,
-        property.Location,
-        property.City,
-        property.Beds,
-        property.Baths,
-        property.Sqft,
-        property.Type,
-        property.IsFeatured,
-        property.Latitude,
-        property.Longitude,
-        property.ExpresswayProximity,
-        property.IsReraRegistered,
-        property.ReraRegistrationNumber,
-        property.ReraDocumentUrl,
-        property.VastuOrientation,
-        property.ListerId,
-        property.BuiltYear,
-        ListingIntent = property.ListingIntent switch
-        {
-            "sell" => "Buy",
-            "rent" => "Rent",
-             _ => char.ToUpper(property.ListingIntent[0]) + property.ListingIntent.Substring(1)
-        },
-        listedSince = (DateTime.UtcNow - property.CreatedAt).Days + " days",
-        property.Images,
-        property.Amenities,
-        property.Agents
-    };
+    //     var result = new
+    // {
+    //     property.Id,
+    //     property.Title,
+    //     property.Price,
+    //     property.Location,
+    //     property.City,
+    //     property.Beds,
+    //     property.Baths,
+    //     property.Sqft,
+    //     property.Type,
+    //     property.IsFeatured,
+    //     property.Latitude,
+    //     property.Longitude,
+    //     property.ExpresswayProximity,
+    //     property.IsReraRegistered,
+    //     property.ReraRegistrationNumber,
+    //     property.ReraDocumentUrl,
+    //     property.VastuOrientation,
+    //     property.ListerId,
+    //     property.BuiltYear,
+    //     ListingIntent = property.ListingIntent switch
+    //     {
+    //         "sell" => "Buy",
+    //         "rent" => "Rent",
+    //          _ => char.ToUpper(property.ListingIntent[0]) + property.ListingIntent.Substring(1)
+    //     },
+    //     listedSince = (DateTime.UtcNow - property.CreatedAt).Days + " days",
+    //     property.Images,
+    //     property.Amenities,
+    //     property.Agents
+    // };
         
-        return Ok(result);
+        return Ok(property);
     }
 
     [HttpDelete("{id}")]

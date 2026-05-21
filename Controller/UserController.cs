@@ -116,13 +116,15 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateProfile([FromBody] UserProfile userProfile)
     {
-        var userEmail = userProfile.Email?.Trim().ToLower();
+        // var userEmail = userProfile.Email?.Trim().ToLower();
 
+        var userEmail = User.FindFirstValue(ClaimTypes.Email);
+        System.Console.WriteLine($"Email is ========================= {userEmail}");
         var profile = await _db.UserProfiles
             .FirstOrDefaultAsync(u => u.Email == userEmail);
 
         if (profile == null)
-            return NotFound();
+            return NotFound("User not found in db");
 
         profile.Name = userProfile.Name;
         profile.Email = userProfile.Email;
@@ -136,6 +138,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetProfileById(string id)
     {
         var profile = await _db.UserProfiles.FindAsync(id);
